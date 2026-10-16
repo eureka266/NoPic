@@ -17,10 +17,18 @@ description: 在 Codex 侧边打开 NoPic 工作台，用自然语言和上传�
 1. 调用 `scripts/start_workbench.py` 检查并启动本地工作台；已有可用实例时复用，不重复启动。
 2. 使用 Codex 的 `open_in_codex` 浏览器面板动作打开工作台 URL，默认放在右侧。不要把启动命令或 localhost 地址作为用户的第一步要求。
 3. 如果当前宿主没有 `open_in_codex`，说明侧边面板不可用，直接返回工作台 URL并继续在会话中制作；不要宣称已打开侧边栏。
-4. 用户在工作台上传素材或填写说明后，读取 `workspace/workbench-state.json` 与 `workspace/session-handoffs/latest.json`，把它们视为当前会话的输入。参考图保持 `reference_only` 语义，不能自动变成发布素材。
+4. 用户在工作台上传素材或填写说明后，读取当前项目 `.nopic/workspace/workbench-state.json` 与 `.nopic/workspace/session-handoffs/latest.json`，把它们视为当前会话的输入。参考图保持 `reference_only` 语义，不能自动变成发布素材。
 5. 预览、改字、换底图、选择模板和导出可以在工作台完成；视觉判断、事实核对、素材取舍、新背景生成和最终交付说明仍由当前会话负责。
 
 工作台不能直接向 Codex 注入新消息。它通过共享本地项目状态和会话任务清单与当前对话同步；没有清单时，以聊天中用户明确提供的素材和要求为准。
+
+## 品牌素材包
+
+用户附带一个包含 `manifest.json` 的 NoPic 品牌素材 ZIP，或明确说“安装这个品牌素材包”时，先读取 [品牌素材包协议](references/brand-pack.md)，再调用 `scripts/install_brand_pack.py <zip>`。默认安装到当前项目的 `.nopic/brand-packs/<id>/<version>/`，并激活 `.nopic/active-brand-pack.json`；不要要求用户指定 skill 安装目录。
+
+安装成功后重新调用 `scripts/start_workbench.py`。启动器会自动发现当前项目的激活品牌包，以 `--brand-pack` 传给工作台。工作台会显示品牌包中的可用底图和默认 Logo，并在静态渲染时使用包内文件。品牌包中的参考图只进入参考素材列表，保持 `reference_only`，不能自动进入发布图层。
+
+如果品牌包缺少 manifest、默认素材不存在、文件路径越界或同一版本已经安装但内容不同，停止安装并说明具体文件；不要覆盖已有品牌包。没有品牌包时继续使用仓库内置的演示素材和底图。
 
 ## 核心产品原则：同一系统，两类产物
 

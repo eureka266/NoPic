@@ -94,7 +94,8 @@ python3 -m venv .venv
 | 中文出现方框 / `Font lacks characters` | 提供覆盖这些文字的字体，交给助手设置 `font` / `font_bold`；不要仅改文件后缀。 |
 | 改字后图没更新 / 只剩一张 PNG | 提供原项目目录重新编译；只有 PNG 时无法可靠恢复独立图层。[项目说明](references/asset-model.md) |
 | 单文件预览不能真实保存 / 导出 | `preview.html` 仅供外观体验；真实操作需要启动本地服务。[启动说明](output/prototypes/cover-workbench/README.md) |
-| 工作台如何交给 Codex 会话 | 自然语言调用 skill 会自动启动并尝试打开右侧面板；上传素材后点击“准备当前会话任务”，工作台会生成 `workspace/session-handoffs/latest.json` / `latest.md` 并复制提示词，回到当前会话粘贴即可。 |
+| 工作台如何交给 Codex 会话 | 自然语言调用 skill 会自动启动并尝试打开右侧面板；上传素材后点击“准备当前会话任务”，工作台会生成 `.nopic/workspace/session-handoffs/latest.json` / `latest.md` 并复制提示词，回到当前会话粘贴即可。 |
+| 如何让同事复用品牌资产 | 将带 `manifest.json` 的 NoPic 品牌素材 ZIP 附到 Codex 对话，要求安装品牌包；skill 会自动安装到当前项目 `.nopic/brand-packs/`，无需指定 skill 路径。[品牌素材包说明](references/brand-pack.md) |
 
 ## 继续了解与反馈
 

@@ -15,14 +15,18 @@
 
 ## 共享状态
 
+工作台的运行状态位于当前项目的 `.nopic/workspace/`。直接从原型目录手动启动时，旧版也可能使用 `output/prototypes/cover-workbench/workspace/`；以 `/api/state` 返回的 `workspace` 为准。
+
 工作台的运行状态位于：
 
-- `output/prototypes/cover-workbench/workspace/workbench-state.json`：当前模式、底图、模板、文案、预览和上传索引。
-- `output/prototypes/cover-workbench/workspace/inbox/`：用户上传的原文件，按香港日期、用途和内容哈希归档。
-- `output/prototypes/cover-workbench/workspace/session-handoffs/latest.json`：最近一次会话任务的机器可读清单。
-- `output/prototypes/cover-workbench/workspace/session-handoffs/latest.md`：最近一次会话任务的人类可读清单。
+- `.nopic/workspace/workbench-state.json`：当前模式、底图、模板、文案、预览和上传索引。
+- `.nopic/workspace/inbox/`：用户上传的原文件，按香港日期、用途和内容哈希归档。
+- `.nopic/workspace/session-handoffs/latest.json`：最近一次会话任务的机器可读清单。
+- `.nopic/workspace/session-handoffs/latest.md`：最近一次会话任务的人类可读清单。
+- `.nopic/active-brand-pack.json`：当前项目激活的品牌包及版本。
+- `.nopic/brand-packs/<id>/<version>/`：品牌包的正式 Logo、底图、参考图、字体和示例。
 
-当用户说“我已经上传了”“按工作台里的图继续”“用刚才的参考图”等话时，先读 `workbench-state.json`；如果存在 `session-handoffs/latest.json`，再读它。以 `uploads[].relative_path` 读取实际文件，以 `uploads[].reference_only` 判断是否只能作为参考。读取不到状态时，回到当前会话中的附件和文字要求，不猜测工作台内容。
+当用户说“我已经上传了”“按工作台里的图继续”“用刚才的参考图”等话时，先读 `.nopic/workspace/workbench-state.json`；如果存在 `.nopic/workspace/session-handoffs/latest.json`，再读它。以 `uploads[].relative_path` 读取实际文件，以 `uploads[].reference_only` 判断是否只能作为参考。读取不到状态时，回到当前会话中的附件和文字要求，不猜测工作台内容。
 
 ## 面板与会话的边界
 

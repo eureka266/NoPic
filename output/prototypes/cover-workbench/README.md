@@ -46,14 +46,15 @@ python3 -m venv .venv
 - 两套合作模板：极简双 Logo、居中标题；中文文案可更新。
 - PNG / WebP 真实静态导出，预览使用现有 `render_cover.py` / `cover_project.py` 的成图。
 - 按品牌、总体参考、底图参考、可用底图、既有静图和其他素材分类上传，保留原名和字节；同名不同内容通过哈希子目录分开存放。
-- `workspace/` 下保存原件、索引、可编辑项目、版本和导出结果。
+- `.nopic/workspace/` 下保存原件、索引、可编辑项目、版本和导出结果；直接运行旧版原型时仍可能使用本目录旁的 `workspace/`。
+- 已安装的 `.nopic/active-brand-pack.json` 会让工作台自动读取对应品牌包里的底图和默认 Logo。
 - 定稿生成本地候选 ZIP 和文件清单；可选择仅保留本地，当前版本记录不再提醒。
 - 查看实际工作路径与可选知识库目录。
 - “准备当前会话任务”会生成 `workspace/session-handoffs/latest.json` 与 `latest.md`，供当前 Codex 会话读取。
 
 ## 明确尚未接入
 
-- 自动向当前 Codex 会话注入消息、原生 image_gen、人物抠图、自动 hook 安装、Git 提交或推送。工作台已支持文件桥接：点击“准备当前会话任务”会在 `workspace/session-handoffs/` 生成 JSON / Markdown 清单并复制可粘贴提示词。
+- 自动向当前 Codex 会话注入消息、原生 image_gen、人物抠图、自动 hook 安装、Git 提交或推送。工作台已支持文件桥接：点击“准备当前会话任务”会在 `.nopic/workspace/session-handoffs/` 生成 JSON / Markdown 清单并复制可粘贴提示词。
 - 任意素材替换到模板槽位；当前品牌槽位固定使用本品牌与合作方的文字占位。
 - 自由拖动、缩放、撤销、多项目切换、工作路径选择与完整多平台版式。
 - 动画制作与编码。动效入口显示缺少独立纹理层，只可将需求保存至 `workspace/requests/`，不会假装已生成视频。

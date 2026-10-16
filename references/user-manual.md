@@ -8,7 +8,9 @@
 
 在对话中提供图片、正式 Logo 或已有项目目录，再输入指令与中文需求即可。以下 `/...` 是 skill 的对话子指令，无需在终端运行。
 
-在 Codex 中自然语言调用 `$blocksec-social-cover` 时，skill 会先启动或复用本地 NoPic 工作台，并尝试在 Codex 右侧面板打开它。你可以在面板中上传参考图、Logo、人物照片、产品截图和字体，同时继续在当前会话里描述用途、文案和修改意见。工作台保存的当前草稿位于 `output/prototypes/cover-workbench/workspace/workbench-state.json`，最近一次会话任务位于 `workspace/session-handoffs/latest.json` / `latest.md`；如果宿主不支持侧边面板，skill 会返回本地 URL 并继续使用会话流程。
+在 Codex 中自然语言调用 `$blocksec-social-cover` 时，skill 会先启动或复用本地 NoPic 工作台，并尝试在 Codex 右侧面板打开它。你可以在面板中上传参考图、Logo、人物照片、产品截图和字体，同时继续在当前会话里描述用途、文案和修改意见。工作台保存的当前草稿位于当前项目 `.nopic/workspace/workbench-state.json`，最近一次会话任务位于 `.nopic/workspace/session-handoffs/latest.json` / `latest.md`；如果宿主不支持侧边面板，skill 会返回本地 URL 并继续使用会话流程。
+
+如果同事拿到一个 NoPic 品牌素材 ZIP，直接把它附在当前 Codex 对话并说“安装这个品牌素材包并打开工作台”。skill 会将它安装到当前项目 `.nopic/brand-packs/<id>/<version>/`，写入 `.nopic/active-brand-pack.json`，并让工作台自动显示其中的底图和默认 Logo。无需指定 skill 的安装路径；只有同时存在多个项目或品牌包时才需要选择。
 
 ## 首次使用
 

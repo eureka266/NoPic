@@ -2,7 +2,7 @@ const $ = (id) => document.getElementById(id);
 const demo = JSON.parse($('demo-data').textContent);
 const names = {soft:'浅色柔光网格',orange:'暖橙渐变网格',radial:'对称径向网格'};
 const categories = {brand:'品牌素材', 'layout-reference':'总体参考', 'background-reference':'底图参考',background:'可用底图',static:'已有静图',other:'其他素材'};
-let state = {mode:'cover',background:'soft',template:'minimal',title:'Partnership Announcement',subtitle:'Approved copy goes here.',format:'png',duration:5,uploads:[]};
+let state = {mode:'cover',background:'soft',template:'minimal',title:'Partnership Announcement',subtitle:'Approved copy goes here.',format:'png',duration:5,uploads:[],brand_pack:null,logo_id:null,partner_logo_id:null};
 let online = false, timer, toastTimer, sequence = 0, renderChain = Promise.resolve();
 
 function toast(message, error = false) {
@@ -17,7 +17,7 @@ async function api(path, body) {
   return result;
 }
 function draft() {
-  return {mode:state.mode,background:state.background,template:$('template').value,title:$('title').value,subtitle:$('subtitle').value,format:$('format').value,duration:Number($('duration').value)};
+  return {mode:state.mode,background:state.background,template:$('template').value,title:$('title').value,subtitle:$('subtitle').value,format:$('format').value,duration:Number($('duration').value),logo_id:state.logo_id,partner_logo_id:state.partner_logo_id};
 }
 function showTab(tab) {
   document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===tab)));
@@ -39,10 +39,37 @@ function syncMode() {
   else $('action-status').textContent='本地制作 · 素材不外传';
   $('finalization').hidden=!(state.finalized && state.dismissed_revision!==state.render_key) || motion;
 }
+function backgroundAssets() {
+  if(state.brand_pack?.backgrounds?.length) return state.brand_pack.backgrounds;
+  return Object.entries(demo.backgrounds).map(([id,url])=>({id,url,name:names[id]}));
+}
+function rebuildBackgroundOptions() {
+  $('background-options').replaceChildren();
+  for(const asset of backgroundAssets()) {
+    const button=document.createElement('button');button.className='background-option';button.dataset.background=asset.id;
+    const image=document.createElement('img');image.src=asset.url;image.alt=asset.name;
+    const label=document.createElement('span');label.textContent=asset.name;button.append(image,label);
+    button.addEventListener('click',()=>{state.background=asset.id;syncBackgrounds();renderNow().catch(()=>{});});
+    $('background-options').append(button);
+  }
+}
 function syncBackgrounds() {
-  document.querySelectorAll('[data-background]').forEach(b=>b.classList.toggle('active',b.dataset.background===state.background));
-  $('selected-bg-image').src=demo.backgrounds[state.background];
-  $('selected-bg-name').textContent=names[state.background];
+  const assets=backgroundAssets();
+  const selected=assets.find(asset=>asset.id===state.background) || assets[0];
+  if(!selected)return;
+  document.querySelectorAll('[data-background]').forEach(b=>b.classList.toggle('active',b.dataset.background===selected.id));
+  $('selected-bg-image').src=selected.url;
+  $('selected-bg-name').textContent=selected.name;
+}
+function syncBrandPack() {
+  const pack=state.brand_pack;
+  const logos=pack?.logos || [];
+  const brand=logos.find(asset=>asset.id===state.logo_id) || logos[0];
+  const partner=state.partner_logo_id ? logos.find(asset=>asset.id===state.partner_logo_id) : null;
+  $('brand-asset').src=brand?.url || demo.logo;
+  $('partner-asset').src=partner?.url || demo.partner;
+  $('brand-pack-name').textContent=pack ? `${pack.display_name} · ${pack.version || '未标版本'}` : '默认演示素材';
+  $('brand-pack-help').textContent=pack ? '已载入当前项目的品牌包，Logo 与底图来自包内清单。' : '当前使用演示素材；可通过 Codex 会话安装品牌包。';
 }
 function syncTemplate() {
   $('copy-fields').hidden=$('template').value==='minimal';
@@ -102,7 +129,7 @@ function applyState() {
   $('subtitle').value=state.subtitle; $('format').value=state.format;
   $('duration').value=state.duration; $('duration-label').textContent=state.duration+' 秒';
   if(state.preview) $('preview').src=state.preview;
-  syncMode(); syncBackgrounds(); syncTemplate(); updatePaths(); displayFiles();
+  syncMode(); rebuildBackgroundOptions(); syncBackgrounds(); syncBrandPack(); syncTemplate(); updatePaths(); displayFiles();
 }
 async function uploadFiles(files) {
   if(!online) return toast('请通过本地服务打开后上传，确保原文件实际落盘。',true);
@@ -156,15 +183,7 @@ function showFinalization() {
   $('finalization').hidden=state.dismissed_revision===state.render_key;
 }
 
-$('brand-asset').src=demo.logo;
-$('partner-asset').src=demo.partner; $('preview').src=demo.cover;
-for(const key of Object.keys(names)) {
-  const button=document.createElement('button');button.className='background-option';button.dataset.background=key;
-  const image=document.createElement('img');image.src=demo.backgrounds[key];image.alt=names[key];
-  const label=document.createElement('span');label.textContent=names[key];button.append(image,label);
-  button.addEventListener('click',()=>{state.background=key;syncBackgrounds();renderNow().catch(()=>{});});
-  $('background-options').append(button);
-}
+$('preview').src=demo.cover;
 document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{
   state.mode=button.dataset.mode;syncMode();
   renderNow().catch(()=>{});

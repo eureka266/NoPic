@@ -71,10 +71,10 @@
     <label class="field-label" for="template">版式</label><select id="template"><option value="minimal">极简双 Logo</option><option value="centered">居中标题 + 双 Logo</option></select>
     <p class="field-help" id="template-help">只展示双方品牌，保持充足留白。</p>
     <div id="copy-fields" hidden><label class="field-label" for="title">主标题</label><textarea id="title" rows="2" maxlength="200">Partnership Announcement</textarea><label class="field-label" for="subtitle">说明文案</label><textarea id="subtitle" rows="2" maxlength="500">Approved copy goes here.</textarea><p class="field-help">演示文案，请替换为已确认的内容。</p></div>
-    <div class="divider"></div><div class="section-heading"><h3>当前品牌素材</h3><span class="subtle">2 项</span></div>
+    <div class="divider"></div><div class="section-heading"><h3>当前品牌素材</h3><span class="subtle" id="brand-pack-name">默认演示素材</span></div>
     <div class="asset-slot"><div class="asset-thumb"><img id="brand-asset" alt="本品牌占位文字，非正式 Logo"></div><div><strong>本品牌</strong><small>示例占位 · 请替换为正式 Logo</small></div><svg class="verified"><use href="#i-check"/></svg></div>
     <div class="asset-slot"><div class="asset-thumb"><img id="partner-asset" alt="合作方文字占位，非正式 Logo"></div><div><strong>合作方</strong><small>示例占位 · 请替换为正式 Logo</small></div><svg class="verified"><use href="#i-check"/></svg></div>
-    <p class="field-help">上传区先保存原件。本原型的品牌槽位沿用已有示例，暂不自动替换。</p>
+    <p class="field-help" id="brand-pack-help">当前使用演示素材；可通过 Codex 会话安装品牌包。</p>
     <div class="divider"></div><div class="section-heading"><h3>底图</h3><button class="text-button" id="choose-background">更换 <span>↗</span></button></div>
     <button class="selected-bg" id="selected-bg"><img id="selected-bg-image" alt="已选底图"><span><strong id="selected-bg-name">浅色柔光网格</strong><small>已有图库 · 不重新生成</small></span><svg><use href="#i-check"/></svg></button>
    </section>
