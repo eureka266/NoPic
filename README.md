@@ -78,7 +78,7 @@ python3 -m venv .venv
 
 ## 想先看看界面？
 
-下面是本地预览工作台原型，可切换已有底图、修改部分文案并导出静态图。**技能主要通过对话使用，工作台是可选原型**；尚未接入对话任务、新背景生成、任意 Logo 槽位替换或动画制作。
+下面是本地预览工作台原型，可切换已有底图、修改部分文案并导出静态图。**技能主要通过对话使用，工作台是可选交互面板**；在 Codex 中用自然语言调用 skill 时，会自动启动并尝试在右侧打开工作台。工作台通过共享本地状态和会话任务清单连接当前会话，但浏览器不能直接向当前会话注入消息。新背景生成、任意 Logo 槽位替换和动画制作仍未接入。
 
 <a href="docs/assets/workbench.jpg"><img src="docs/assets/workbench.jpg" alt="NoPic 本地工作台真实截图：本品牌占位、素材准备、配图预览和版本管理" width="800"></a>
 
@@ -94,6 +94,7 @@ python3 -m venv .venv
 | 中文出现方框 / `Font lacks characters` | 提供覆盖这些文字的字体，交给助手设置 `font` / `font_bold`；不要仅改文件后缀。 |
 | 改字后图没更新 / 只剩一张 PNG | 提供原项目目录重新编译；只有 PNG 时无法可靠恢复独立图层。[项目说明](references/asset-model.md) |
 | 单文件预览不能真实保存 / 导出 | `preview.html` 仅供外观体验；真实操作需要启动本地服务。[启动说明](output/prototypes/cover-workbench/README.md) |
+| 工作台如何交给 Codex 会话 | 自然语言调用 skill 会自动启动并尝试打开右侧面板；上传素材后点击“准备当前会话任务”，工作台会生成 `workspace/session-handoffs/latest.json` / `latest.md` 并复制提示词，回到当前会话粘贴即可。 |
 
 ## 继续了解与反馈
 

@@ -67,6 +67,8 @@ function displayFiles() {
     row.querySelector('.micro-tag').textContent=categories[file.category];
     $('uploaded-files').append(row);
   }
+  const count = (state.uploads || []).length;
+  $('handoff-session').querySelector('span').textContent = count ? `准备当前会话任务（${count} 个素材）` : '准备当前会话任务';
 }
 function acceptResult(result) {
   Object.assign(state,result);
@@ -118,6 +120,22 @@ async function uploadFiles(files) {
   } catch(error) {toast((completed?'已保存 '+completed+' 个文件。':'')+error.message,true);}
   finally {button.disabled=false;$('file-input').value='';}
 }
+async function handoffSession() {
+  if(!online) return toast('请先启动本地服务。',true);
+  const button=$('handoff-session'); button.disabled=true;
+  try {
+    const result=await api('/api/session-handoff',{instruction:$('session-instruction').value.trim()});
+    acceptResult(result.state);
+    const prompt=result.handoff.prompt;
+    let copied=false;
+    try {await navigator.clipboard.writeText(prompt);copied=true;} catch(error) {}
+    $('session-handoff-status').textContent = copied
+      ? `任务已生成：${result.handoff.markdown_file}；提示词已复制，请回到当前会话粘贴。`
+      : `任务已生成：${result.handoff.markdown_file}；请复制任务路径到当前会话。`;
+    toast(copied?'会话任务已准备，提示词已复制。':'会话任务已准备，请查看任务路径。');
+  } catch(error) {toast(error.message,true);}
+  finally {button.disabled=false;}
+}
 async function finalize() {
   if(!online) return toast('请先启动本地服务。',true);
   try {
@@ -161,6 +179,7 @@ $('format').onchange=()=>{if(online)api('/api/save',draft()).then(result=>{state
 $('upload-category').onchange=updatePaths;
 $('dropzone').onclick=()=>$('file-input').click();
 $('file-input').onchange=()=>uploadFiles(Array.from($('file-input').files));
+$('handoff-session').onclick=handoffSession;
 for(const event of ['dragenter','dragover']) $('dropzone').addEventListener(event,e=>{e.preventDefault();$('dropzone').classList.add('dragover');});
 for(const event of ['dragleave','drop']) $('dropzone').addEventListener(event,e=>{e.preventDefault();$('dropzone').classList.remove('dragover');if(event==='drop')uploadFiles(Array.from(e.dataTransfer.files));});
 $('duration').oninput=()=>{$('duration-label').textContent=$('duration').value+' 秒';};

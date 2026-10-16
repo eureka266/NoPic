@@ -12,6 +12,8 @@
 @media(max-width:430px){.app-header,.project-bar{padding-left:15px;padding-right:15px}.brand{gap:8px;font-size:11px}.header-divider{margin:0 2px}.workflow-nav{margin-left:15px;margin-right:15px}.workbench{margin:0 15px}.canvas-size{font-size:9px}.preview-stage{padding:18px 16px}.preview-caption{font-size:9px}.panel-heading{padding:0 16px}.action-bar{padding-left:15px;padding-right:15px}.action-status{font-size:9px}.actions .secondary{padding:8px 10px}.primary{padding:8px 12px}.asset-slot{gap:8px}.asset-slot strong{font-size:10px}.asset-slot small{font-size:8px}.save-state{font-size:9px}.dropzone small{font-size:9px}.upload-plus{display:none}.delivery-list{grid-template-columns:1fr}.background-options{gap:7px}.prototype-note{padding-left:15px;padding-right:15px}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition:none!important}}
 
+.session-handoff{margin:18px 20px 10px;padding:15px;background:#f5f7f1;border:1px solid #dce4d5;border-radius:6px}.session-handoff .field-label{margin-top:0}.session-handoff textarea{min-height:68px}.session-handoff .primary{margin-top:10px}.session-handoff .primary svg{width:14px;height:14px}.session-handoff .field-help{margin-bottom:0}
+
 .brand-name{font-size:22px;font-weight:700;letter-spacing:-.04em;line-height:1}
 
 </style>
@@ -66,8 +68,14 @@
     <input type="file" id="file-input" multiple hidden>
     <div class="destination"><svg><use href="#i-folder"/></svg><span id="upload-destination">inbox/materials/日期-partnership-demo/brand/</span></div>
     <div id="uploaded-files" class="file-list" aria-live="polite"></div>
+    <div class="session-handoff">
+     <label class="field-label" for="session-instruction">给当前会话的制作说明 <span class="subtle">可选</span></label>
+     <textarea id="session-instruction" rows="3" placeholder="例如：参考上传的总体参考图，保留本公司 Logo，做一张 LinkedIn 合作公告封面。"></textarea>
+     <button class="primary full" id="handoff-session"><svg><use href="#i-link"/></svg><span>准备当前会话任务</span></button>
+     <p class="field-help" id="session-handoff-status">会生成本地任务清单并复制提示词；不会直接向 Codex 注入消息。</p>
+    </div>
    </section>
-   <section class="flow-note"><svg><use href="#i-link"/></svg><p>继续在 Codex 对话里描述修改意见。正式版会与这里共用同一个项目。<span>本原型尚未接入对话任务。</span></p></section>
+   <section class="flow-note"><svg><use href="#i-link"/></svg><p>准备任务后回到当前 Codex 会话粘贴提示词，agent 会读取同一份本地素材和草稿。<span>浏览器无法直接向当前会话注入消息。</span></p></section>
   </div>
   <aside class="inspector">
    <div class="inspector-tabs" role="tablist" aria-label="配图设置"><button role="tab" aria-selected="true" data-tab="content">内容</button><button role="tab" aria-selected="false" data-tab="backgrounds">底图</button><button role="tab" aria-selected="false" data-tab="delivery">交付</button></div>
@@ -177,6 +185,8 @@ function displayFiles() {
     row.querySelector('.micro-tag').textContent=categories[file.category];
     $('uploaded-files').append(row);
   }
+  const count = (state.uploads || []).length;
+  $('handoff-session').querySelector('span').textContent = count ? `准备当前会话任务（${count} 个素材）` : '准备当前会话任务';
 }
 function acceptResult(result) {
   Object.assign(state,result);
@@ -228,6 +238,22 @@ async function uploadFiles(files) {
   } catch(error) {toast((completed?'已保存 '+completed+' 个文件。':'')+error.message,true);}
   finally {button.disabled=false;$('file-input').value='';}
 }
+async function handoffSession() {
+  if(!online) return toast('请先启动本地服务。',true);
+  const button=$('handoff-session'); button.disabled=true;
+  try {
+    const result=await api('/api/session-handoff',{instruction:$('session-instruction').value.trim()});
+    acceptResult(result.state);
+    const prompt=result.handoff.prompt;
+    let copied=false;
+    try {await navigator.clipboard.writeText(prompt);copied=true;} catch(error) {}
+    $('session-handoff-status').textContent = copied
+      ? `任务已生成：${result.handoff.markdown_file}；提示词已复制，请回到当前会话粘贴。`
+      : `任务已生成：${result.handoff.markdown_file}；请复制任务路径到当前会话。`;
+    toast(copied?'会话任务已准备，提示词已复制。':'会话任务已准备，请查看任务路径。');
+  } catch(error) {toast(error.message,true);}
+  finally {button.disabled=false;}
+}
 async function finalize() {
   if(!online) return toast('请先启动本地服务。',true);
   try {
@@ -271,6 +297,7 @@ $('format').onchange=()=>{if(online)api('/api/save',draft()).then(result=>{state
 $('upload-category').onchange=updatePaths;
 $('dropzone').onclick=()=>$('file-input').click();
 $('file-input').onchange=()=>uploadFiles(Array.from($('file-input').files));
+$('handoff-session').onclick=handoffSession;
 for(const event of ['dragenter','dragover']) $('dropzone').addEventListener(event,e=>{e.preventDefault();$('dropzone').classList.add('dragover');});
 for(const event of ['dragleave','drop']) $('dropzone').addEventListener(event,e=>{e.preventDefault();$('dropzone').classList.remove('dragover');if(event==='drop')uploadFiles(Array.from(e.dataTransfer.files));});
 $('duration').oninput=()=>{$('duration-label').textContent=$('duration').value+' 秒';};

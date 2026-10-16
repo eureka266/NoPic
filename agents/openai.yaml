@@ -1,7 +1,7 @@
 interface:
   display_name: "有图 NoPic"
-  short_description: "实验性的内容营销配图技能，复用已有底图与版式，保留可修改项目"
-  default_prompt: "使用 $blocksec-social-cover 制作这个主题的配图，复用已有背景与图层，在同一可编辑项目中按需要导出静图、循环动图和不同平台版本。"
+  short_description: "在 Codex 侧边工作台制作可编辑社交封面"
+  default_prompt: "使用 $blocksec-social-cover 制作这个主题的配图，在 Codex 侧边打开 NoPic 工作台，结合我提供的参考图和正式素材完成可编辑封面。"
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg
 policy:

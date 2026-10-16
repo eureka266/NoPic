@@ -55,8 +55,14 @@
     <input type="file" id="file-input" multiple hidden>
     <div class="destination"><svg><use href="#i-folder"/></svg><span id="upload-destination">inbox/materials/日期-partnership-demo/brand/</span></div>
     <div id="uploaded-files" class="file-list" aria-live="polite"></div>
+    <div class="session-handoff">
+     <label class="field-label" for="session-instruction">给当前会话的制作说明 <span class="subtle">可选</span></label>
+     <textarea id="session-instruction" rows="3" placeholder="例如：参考上传的总体参考图，保留本公司 Logo，做一张 LinkedIn 合作公告封面。"></textarea>
+     <button class="primary full" id="handoff-session"><svg><use href="#i-link"/></svg><span>准备当前会话任务</span></button>
+     <p class="field-help" id="session-handoff-status">会生成本地任务清单并复制提示词；不会直接向 Codex 注入消息。</p>
+    </div>
    </section>
-   <section class="flow-note"><svg><use href="#i-link"/></svg><p>继续在 Codex 对话里描述修改意见。正式版会与这里共用同一个项目。<span>本原型尚未接入对话任务。</span></p></section>
+   <section class="flow-note"><svg><use href="#i-link"/></svg><p>准备任务后回到当前 Codex 会话粘贴提示词，agent 会读取同一份本地素材和草稿。<span>浏览器无法直接向当前会话注入消息。</span></p></section>
   </div>
   <aside class="inspector">
    <div class="inspector-tabs" role="tablist" aria-label="配图设置"><button role="tab" aria-selected="true" data-tab="content">内容</button><button role="tab" aria-selected="false" data-tab="backgrounds">底图</button><button role="tab" aria-selected="false" data-tab="delivery">交付</button></div>

@@ -36,7 +36,8 @@ CATEGORIES = {'brand': 'materials/brand', 'layout-reference': 'materials/referen
 DEFAULT = {'mode': 'cover', 'background': 'soft', 'template': 'minimal',
            'title': 'Partnership Announcement', 'subtitle': 'Approved copy goes here.',
            'format': 'png', 'duration': 5, 'uploads': [], 'revision': 0,
-           'finalized': False, 'preview': None, 'render_key': None}
+           'finalized': False, 'preview': None, 'render_key': None,
+           'session_handoff': None}
 
 
 def now():
@@ -87,6 +88,52 @@ def update_draft(data):
     state['updated_at'] = now()
     write_json(STATE, state)
     return state
+
+
+def session_handoff_markdown(handoff):
+    draft = handoff['draft']
+    lines = [
+        '# NoPic 会话任务',
+        '',
+        f"- 任务 ID：`{handoff['id']}`",
+        f"- 创建时间：`{handoff['created_at']}`（Asia/Hong_Kong）",
+        '- 来源：本地工作台上传界面',
+        '',
+        '## 制作说明',
+        '',
+        handoff['instruction'] or '请根据已上传素材和当前草稿继续制作封面图。',
+        '',
+        '## 当前草稿',
+        '',
+        f"- 流程：`{draft['mode']}`",
+        f"- 模板：`{draft['template']}`",
+        f"- 底图：`{draft['background']}`",
+        f"- 标题：{draft['title'] or '（空）'}",
+        f"- 副标题：{draft['subtitle'] or '（空）'}",
+        f"- 输出：`{draft['format']}`",
+        '',
+        '## 已上传素材',
+        '',
+    ]
+    if handoff['uploads']:
+        for asset in handoff['uploads']:
+            reference = '（仅参考）' if asset.get('reference_only') else ''
+            lines.append(
+                f"- `{asset['category']}`{reference}：`{asset['relative_path']}` "
+                f"（原名：`{asset['original_name']}`）"
+            )
+    else:
+        lines.append('- 暂无上传素材。')
+    lines.extend([
+        '',
+        '## 执行约束',
+        '',
+        '- 保留用户原始素材，不覆盖同名文件。',
+        '- 参考图只用于分析视觉方向，除非明确指定，不自动作为发布素材。',
+        '- 默认复用已有底图；只有用户明确要求时才生成新背景。',
+        '- 当前工作台通过文件桥接连接会话，不能直接向 Codex 注入消息。',
+    ])
+    return '\n'.join(lines) + '\n'
 
 
 def render(data):
@@ -256,6 +303,53 @@ class Handler(BaseHTTPRequestHandler):
                     write_json(file, {'kind': kind, 'brief': str(data.get('brief', ''))[:6000],
                                       'created_at': now(), 'status': 'saved-not-executed', 'draft': read_state()})
                     return self.send_data({'path': str(file), 'executed': False})
+                if path == '/api/session-handoff':
+                    state = read_state()
+                    instruction = str(data.get('instruction', '')).strip()
+                    if len(instruction) > 6000:
+                        raise ValueError('会话说明不能超过 6000 个字符')
+                    handoff_id = now()[:10] + '-cover-' + uuid.uuid4().hex[:8]
+                    handoff = {
+                        'id': handoff_id,
+                        'created_at': now(),
+                        'status': 'ready-for-codex',
+                        'source': 'cover-workbench',
+                        'instruction': instruction,
+                        'draft': {key: state[key] for key in (
+                            'mode', 'background', 'template', 'title', 'subtitle', 'format', 'duration')},
+                        'uploads': state.get('uploads', []),
+                        'workspace': str(WORK),
+                    }
+                    folder = WORK / 'session-handoffs'
+                    json_file = folder / (handoff_id + '.json')
+                    markdown_file = folder / (handoff_id + '.md')
+                    write_json(json_file, handoff)
+                    markdown_file.parent.mkdir(parents=True, exist_ok=True)
+                    markdown_file.write_text(session_handoff_markdown(handoff))
+                    write_json(folder / 'latest.json', handoff)
+                    (folder / 'latest.md').write_text(session_handoff_markdown(handoff))
+                    state['session_handoff'] = {
+                        'id': handoff_id,
+                        'status': handoff['status'],
+                        'created_at': handoff['created_at'],
+                        'json_path': str(json_file.relative_to(WORK)),
+                        'markdown_path': str(markdown_file.relative_to(WORK)),
+                        'latest_json_path': str((folder / 'latest.json').relative_to(WORK)),
+                        'latest_markdown_path': str((folder / 'latest.md').relative_to(WORK)),
+                    }
+                    write_json(STATE, state)
+                    prompt = (
+                        '请读取本地工作台生成的会话任务文件：' + str(json_file) + '\n'
+                        '根据其中的制作说明、当前草稿和已上传素材继续制作封面图。'
+                    )
+                    return self.send_data({
+                        'handoff': {**state['session_handoff'], 'json_file': str(json_file),
+                                    'markdown_file': str(markdown_file),
+                                    'latest_json_file': str(folder / 'latest.json'),
+                                    'latest_markdown_file': str(folder / 'latest.md'),
+                                    'prompt': prompt},
+                        'state': state_view(),
+                    })
                 if path == '/api/finalize':
                     state = read_state()
                     if not state.get('current_project') or state['mode'] == 'motion':
