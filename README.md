@@ -1,104 +1,106 @@
 # 有图 NoPic
 
+**文案写好了，配图还没着落？** 把用途、文案和素材发给 AI，先做一张，再用中文改到合适。
+
 **Need pics? Call NoPic.** An experimental AI skill for marketing visuals.
 
-**既能交付无字底图，也能制作可编辑的完整封面；有好参考，也可以贡献给团队。**
+[![Stars](https://img.shields.io/github/stars/eureka266/NoPic?style=flat)](https://github.com/eureka266/NoPic/stargazers)
+[![Forks](https://img.shields.io/github/forks/eureka266/NoPic?style=flat)](https://github.com/eureka266/NoPic/forks)
+[![Issues](https://img.shields.io/github/issues/eureka266/NoPic?style=flat)](https://github.com/eureka266/NoPic/issues)
+[![Last commit](https://img.shields.io/github/last-commit/eureka266/NoPic?style=flat)](https://github.com/eureka266/NoPic/commits/main/)
 
-调用：`$blocksec-social-cover`。首次使用会介绍能力并确认类型，之后直接用中文提出需求。
-
-[NoPic 预览工作台与启动说明](output/prototypes/cover-workbench/README.md) · [单文件外观预览](output/prototypes/cover-workbench/preview.html)
-
-<a href="output/prototypes/cover-workbench/preview-nopic.jpg"><img src="output/prototypes/cover-workbench/preview-nopic.jpg" alt="NoPic 内容工作台，以本品牌占位展示营销配图流程" width="560"></a>
-
-<a href="assets/references/readme-workflow.png"><img src="assets/references/readme-workflow.png" alt="选择内容、提供素材、看图修改，以及参考共建与第一张示例的流程图" width="560"></a>
-
-## ① 你准备发什么？
-
-| 内容 | 可以做成 | 直接这样说 |
-| --- | --- | --- |
-| **Partnership** | 双 Logo 合作公告；可继续做背景动效 | 做一张合作公告，用附上的双方 Logo |
-| **活动** | 预告、回顾、嘉宾金句 | 把这些活动信息做成预告 / 回顾 |
-| **安全周报** | 周报封面、阶段汇总、精选要点 | 做本期安全周报，用这个日期范围和摘要 |
-| **安全事件** | 攻击 / 漏洞 / 复盘文章配图 | 为这篇事件分析做一张封面 |
-| **产品更新** | 功能发布配图、真实 UI 展示 | 用这张 UI 截图做功能更新配图 |
-| **研究观点** | 文章封面、署名观点人物卡 | 把这段观点做成配图 |
-
-没有合适类型？选择 **“都不是，新建配图类型”**，说明用途与平台，有参考图就一起发。
-
-## ② 三步拿到第一张图
-
-**说用途** → **发文案 / Logo / 人物或截图** → **看成品，用中文修改**。
-
-```text
-使用 $blocksec-social-cover，制作一张用于领英 / X 的合作公告。
-标题和说明用下面的确认文案，双方正式 Logo 已附上。
-复用已有底图；出图后保留可修改的项目。
+```bash
+npx skills add eureka266/NoPic --skill blocksec-social-cover --agent codex
 ```
 
-想改哪里直接说：“标题大一点”“只换合作方 Logo”“背景再淡一些”。
+<a href="docs/assets/partnership-example.png"><img src="docs/assets/partnership-example.png" alt="已获准展示的 BlockSec × RedotPay 极简双 Logo 版式样例：浅色底图，双方 Logo 分列两侧" width="800"></a>
 
-完整封面默认同时保存 PNG / WebP、无字底图和可重编译项目，后续改标题不用重新生成背景。静图与循环动图是同一主题的两种呈现；要求动图时，在同一个项目保留动效配置并导出 MP4 / GIF，文案和素材共用。只需要背景时可以直接说“给我一套无字 Blog 底图”或“同一主题导出 X / LinkedIn 无字版本”，无需提供标题或 Logo。
+真实导出样例，仅展示版式，不代表经过核实的合作公告。[查看可编辑项目](assets/examples/partnership-redotpay-minimal/content.json)
 
-Blog、X、LinkedIn、微信公众号与 OG 使用独立平台配置。跨画幅封面需适配排版与检查安全区，不拉伸成图。[两种交付模式与可编辑项目说明](references/asset-model.md)
+## 适合哪些配图？
 
-## ③ 示例图库：一张一张生成
+| 你手上有什么 | 可以尝试做成什么 |
+| --- | --- |
+| 双方 Logo + 合作文案 | 合作公告 |
+| 活动信息、嘉宾照片或金句 | 活动预告、回顾、人物卡 |
+| 文章、周报摘要或研究观点 | 文章封面、周报封面、观点配图 |
+| 产品截图 + 已确认的更新说明 | 产品更新配图 |
 
-第 1 张 **Partnership 已完成**。接下来做活动配图，再做安全周报，每次只准备一张的材料。
+拿到的不只是一张 PNG：默认保留 **PNG / WebP、无字底图和可重编译项目**。下次改标题、换 Logo，继续修改原项目。文案和 Logo 分层合成，已有底图可以反复使用。
 
-| 第 1 张 · Partnership | 第 2 张 · 活动 | 第 3 张 · 安全周报 |
-| --- | --- | --- |
-| <a href="assets/examples/partnership-redotpay-minimal/cover.png"><img src="assets/examples/partnership-redotpay-minimal/cover.png" alt="BlockSec × RedotPay 无文案双 Logo 版式示例" width="220"></a> | **下一张**：活动名、日期 / 时区、主题 | **随后制作**：日期范围、标题、确认摘要 |
-| BlockSec × RedotPay，极简无文案；仅展示版式 | 先做预告；回顾或金句可随后补 | 不补造统计或数字 |
+这是一个实验项目，适合先做初稿、复用已有版式。当前模板和素材主要来自一个既有品牌项目；其他品牌使用时，请提供自己的正式 Logo、字体和配色，并明确替换默认品牌。跨平台版本仍需检查排版和安全区。
 
-**现在只需要准备第 2 张：**
+## 三步开始
 
-```text
-继续做 README 的活动预告示例。
-活动名：……
-日期与时区：……
-主题：……
-嘉宾 / 主办信息：……（如需展示）
-这些信息和成品允许用于 README 示例。
-```
+1. **安装到你准备制作配图的项目。** 在该项目的终端运行上面的一行命令；安装器询问时选择项目级安装。安装后运行 `npx skills list --agent codex`，应看到 `blocksec-social-cover`。
+2. **打开新对话，发出第一条需求。** 仓库名是 **NoPic**，当前技能调用名仍是 **`$blocksec-social-cover`**，安装时看到旧名称属于正常情况。
+3. **附上素材，看图后继续修改。** 可以直接说“只换标题”“Logo 小一点”“保留底图，再出一个版本”。
 
-点击已完成图片可查看原图。[逐步制作指南](references/example-walkthrough.md)
-
-<details>
-<summary>先看已有底图风格（底图参考，不是完整海报）</summary>
-
-| 合作浅色 / 暖橙 | 黑底蓝橙光晕 | 活动竖版 |
-| --- | --- | --- |
-| <a href="assets/backgrounds/partnership-soft-grid-light.png"><img src="assets/backgrounds/partnership-soft-grid-light.png" alt="合作浅色底图" width="160"></a><br><a href="assets/backgrounds/partnership-orange-grid-light.png"><img src="assets/backgrounds/partnership-orange-grid-light.png" alt="合作暖橙底图" width="160"></a> | <a href="assets/backgrounds/hex-glow.png"><img src="assets/backgrounds/hex-glow.png" alt="黑底蓝橙光晕底图" width="160"></a> | <a href="assets/backgrounds/portrait-data-glow.png"><img src="assets/backgrounds/portrait-data-glow.png" alt="活动竖版底图" width="100"></a> |
-
-[完整底图库与模板说明](references/user-manual.md#可用底图与主题)
-
-</details>
-
-## 想做动图，或者共同维护？
-
-| 目标 | 入口 | 你提供什么 |
-| --- | --- | --- |
-| 配图的动态版本 | `/animate-cover` | 已确认配图及实际动画源；与静图共用项目，现有配方为前景固定、背景网格循环 |
-| 官网 / 落地页 / 邮件产品动图 | `/product-motion` | 产品、想传达的价值、投放位置；使用独立 Carrot |
-| 贡献参考、改进类型 | `/analyze-reference` | 优秀配图或成品 + 用途 + 想借鉴 / 改进的部分 |
-
-**共建：发参考 → 看设计规格 / 验证图 → 确认入库 → 更新团队版本。**
+任选一句开始，附上对应文案或素材：
 
 ```text
-/analyze-reference
-参考附图，为 BlockSec 安全周报整理一套新的视觉方案。
-请分析字体、版式、底图提示词和图层参数，验证后加入共享参考库。
+使用 $blocksec-social-cover，给这篇文章做一张领英封面。
+用我附上的品牌 Logo 和确认文案，先复用已有底图，保留可编辑项目。
 ```
 
-[同事共建指南](references/contributors-guide.md) · [团队更新与发布](references/team-sharing.md)
+```text
+使用 $blocksec-social-cover，把这些活动信息和嘉宾照片做成预告。
+只用我提供的信息，不补造日期、嘉宾身份或数据。
+```
 
-<details>
-<summary>需要更多说明时再打开</summary>
+```text
+使用 $blocksec-social-cover，只把上一张图的标题换成下面这句。
+其他文案、Logo、背景和位置保持原样。
+```
 
-- [详细使用手册与中文示例](references/user-manual.md)
-- [内容分类](references/content-types.md) · [模板参数](references/template-parameters.md)
-- [首次使用](references/first-invocation.md) · [素材收件](inbox/materials/README.md)
-- [参考库](assets/reference-library/index.json) · [示例状态](assets/examples/index.json)
-- [静图转动图](references/static-to-motion.md) · [产品营销动图](references/product-motion.md)
+**只需要底图？** 直接说“给我一套无字 Blog 底图”，不用准备标题或 Logo。下图展示的是已有底图素材，不是完整海报。
 
-</details>
+| 浅色合作 | 深色文章 | 活动竖版 |
+| --- | --- | --- |
+| <img src="assets/backgrounds/partnership-soft-grid-light.png" alt="浅色合作底图素材，无文字和 Logo" width="240"> | <img src="assets/backgrounds/hex-glow.png" alt="深色光晕底图素材，无文字和 Logo" width="240"> | <img src="assets/backgrounds/portrait-data-glow.png" alt="3:4 活动竖版底图素材，无文字和 Logo" width="135"> |
+
+## 首次出图前检查
+
+- [ ] **可执行本地脚本的 AI 助手**：本页以 Codex 为例，安装入口见 [Codex](https://developers.openai.com/codex/)。普通聊天窗口仅粘贴需求，不能替代本地脚本环境。
+- [ ] **Node.js 与 Git**：用于上面的技能安装命令。从 [Node.js](https://nodejs.org/en/download) 和 [Git](https://git-scm.com/downloads) 安装，运行 `node --version`、`npx --version`、`git --version` 确认。
+- [ ] **Python 3.10+、Pillow、fontTools**：从 [Python](https://www.python.org/downloads/) 安装并运行 `python3 --version`。可以让助手按下面命令建立项目虚拟环境。
+- [ ] **自己的文案、正式素材与适用字体**：中文需要覆盖中文字形的字体，例如 [Noto CJK](https://github.com/notofonts/noto-cjk)。不要用预览中的 `YOUR BRAND` 占位直接发布。
+
+在安装技能的项目目录执行，Windows 将 `.venv/bin/python` 换成 `.venv\Scripts\python.exe`：
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r .agents/skills/blocksec-social-cover/requirements.txt
+.venv/bin/python -c "from PIL import Image; from fontTools.ttLib import TTFont; print('Ready')"
+```
+
+**按需准备：** 复用底图做静图不需要生成新背景。新绘制背景或人物抠图需要助手实际提供原生图像生成 / 编辑工具；动图还需动画源与 FFmpeg（安装见 [FFmpeg](https://ffmpeg.org/download.html)，用 `ffmpeg -version` 检查）。产品演示动图另依赖独立的 Carrot 技能，本仓库不包含它。
+
+## 想先看看界面？
+
+下面是本地预览工作台原型，可切换已有底图、修改部分文案并导出静态图。**技能主要通过对话使用，工作台是可选原型**；尚未接入对话任务、新背景生成、任意 Logo 槽位替换或动画制作。
+
+<a href="docs/assets/workbench.jpg"><img src="docs/assets/workbench.jpg" alt="NoPic 本地工作台真实截图：本品牌占位、素材准备、配图预览和版本管理" width="800"></a>
+
+[启动本地工作台](output/prototypes/cover-workbench/README.md) · [下载单文件外观预览](https://github.com/eureka266/NoPic/blob/main/output/prototypes/cover-workbench/preview.html) · [刷新文档插图](docs/release.md)
+
+## 常见问题
+
+| 遇到什么 | 怎么处理 |
+| --- | --- |
+| `npx` 或 `git` 找不到 | 安装上面的 Node.js / Git，重新打开终端，再运行版本检查。 |
+| 安装后没有 NoPic / 找不到技能 | 查找技术名 `blocksec-social-cover`；运行 `npx skills list --agent codex`，确认安装项目与当前项目一致，再开新对话。仓库发现检查：`npx skills add eureka266/NoPic --list`。 |
+| `No module named PIL` 或 `fontTools` | 按依赖命令安装，并让助手使用该 `.venv` 的 Python 执行渲染脚本。 |
+| 中文出现方框 / `Font lacks characters` | 提供覆盖这些文字的字体，交给助手设置 `font` / `font_bold`；不要仅改文件后缀。 |
+| 改字后图没更新 / 只剩一张 PNG | 提供原项目目录重新编译；只有 PNG 时无法可靠恢复独立图层。[项目说明](references/asset-model.md) |
+| 单文件预览不能真实保存 / 导出 | `preview.html` 仅供外观体验；真实操作需要启动本地服务。[启动说明](output/prototypes/cover-workbench/README.md) |
+
+## 继续了解与反馈
+
+[详细手册](references/user-manual.md) · [平台与项目导出](references/asset-model.md) · [动图说明](references/static-to-motion.md) · [提交问题](https://github.com/eureka266/NoPic/issues) · [项目动态](https://github.com/eureka266/NoPic/activity)
+
+想贡献新风格？提供参考图、用途和希望借鉴的部分，用 `/analyze-reference` 开始。[共建指南](references/contributors-guide.md)
+
+感谢 [Vercel Labs 的 Skills CLI](https://github.com/vercel-labs/skills) 提供安装工具、[Pillow 维护者](https://github.com/python-pillow/Pillow) 与 [fontTools 项目](https://github.com/fonttools/fonttools) 提供图像合成及字体检查能力；文档截图使用 [Microsoft Playwright](https://github.com/microsoft/playwright-python)。
+
+**素材与许可：** 示例仅用于展示已获准的版式，品牌标识、字体和参考素材各自保留原权利；不能据此推断获得商用或再分发许可。仓库尚未选定统一开源许可证。[发布检查与已知待办](docs/release.md)

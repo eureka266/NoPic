@@ -95,6 +95,24 @@ class TeamUpdateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             module.prepare_package(self.root, expected=old)
 
+    def test_package_keeps_readme_assets_and_prototype_without_runtime_files(self):
+        public = ('requirements.txt', 'docs/release.md', 'docs/assets/workbench.jpg',
+                  'output/prototypes/cover-workbench/server.py',
+                  'output/prototypes/cover-workbench/demo-assets/cover.png')
+        private = ('output/prototypes/cover-workbench/workspace/uploads/photo.png',
+                   'output/prototypes/cover-workbench/.venv/bin/python',
+                   'output/prototypes/cover-workbench/preview-wide.png',
+                   'docs/.venv-docs/private.txt')
+        for relative in public + private:
+            path = self.root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b'fixture')
+        report = module.prepare_package(self.root)
+        with zipfile.ZipFile(report['archive']) as archive:
+            names = set(archive.namelist())
+        self.assertTrue(all('blocksec-social-cover/' + name in names for name in public))
+        self.assertFalse(any('blocksec-social-cover/' + name in names for name in private))
+
 
 if __name__ == '__main__':
     unittest.main()

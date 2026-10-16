@@ -1,6 +1,6 @@
 interface:
-  display_name: "Blocksec内容营销配图"
-  short_description: "制作 BlockSec 无字底图与可编辑配图，同一项目导出静图、循环动图和多平台版本"
+  display_name: "有图 NoPic"
+  short_description: "实验性的内容营销配图技能，复用已有底图与版式，保留可修改项目"
   default_prompt: "使用 $blocksec-social-cover 制作这个主题的配图，复用已有背景与图层，在同一可编辑项目中按需要导出静图、循环动图和不同平台版本。"
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg

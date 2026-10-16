@@ -1,14 +1,16 @@
 # 有图 NoPic 内容工作台：侧面板交互原型
 
-2026-10-16，香港时间。此目录是独立原型产物，未修改或安装制图技能，未写入知识库仓库。
+此目录是本地交互原型，调用仓库中的静态合成脚本。日常使用技能不需要先启动它。
 
 ## 打开
 
-本轮本地服务：<http://127.0.0.1:59054/>。在 Codex 内置浏览器中打开，可放入右侧面板。
+启动后打开 <http://127.0.0.1:59054/>；在 Codex 内置浏览器中可放入右侧面板。这里只提供本机服务，没有公开在线演示站点。
 
-首次启动（从本目录执行）：
+先下载仓库，然后启动（已下载可跳过前两行）：
 
 ```sh
+git clone https://github.com/eureka266/NoPic.git
+cd NoPic/output/prototypes/cover-workbench
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python server.py 59054

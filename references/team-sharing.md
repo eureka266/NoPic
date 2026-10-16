@@ -33,7 +33,7 @@ Codex 需要对项目配置层和具体 hook 完成信任检查；未信任或�
 python3 scripts/skill_team_update.py package
 ```
 
-脚本实际生成 `exports/team-updates/<source-revision>/blocksec-social-cover.zip` 和 `manifest.json`。ZIP 包含顶层 `blocksec-social-cover/` 技能目录，保留技术标识。清单记录文件哈希、ZIP 大小和外部依赖。只包含技能说明、脚本、资产、参考、测试与收件使用说明，不包含收件原件、普通输出项目、虚拟环境、凭证或本地 hook 状态。
+脚本实际生成 `exports/team-updates/<source-revision>/blocksec-social-cover.zip` 和 `manifest.json`。ZIP 包含顶层 `blocksec-social-cover/` 技能目录，保留技术标识。清单记录文件哈希、ZIP 大小和外部依赖。包含技能说明、运行依赖清单、脚本、资产、参考、测试、文档插图、收件使用说明，以及预览工作台的显式分发文件；不包含收件原件、普通输出项目、工作台 workspace、虚拟环境、凭证或本地 hook 状态。
 
 这是候选源码包，仍需验证目标工作区的运行环境、字体、image_gen、Python 依赖、真实素材路径以及外部 Carrot / HyperFrames。工作区分享不会自动安装本地软件、复制用户知识库或赋予源系统权限。Carrot 依然是独立外部技能，不能把索引说成已完整打包。
 

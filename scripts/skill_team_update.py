@@ -8,9 +8,15 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-DIRECTORIES = ('agents', 'references', 'scripts', 'assets', 'tests')
-ROOT_FILES = ('SKILL.md', 'README.md', 'AGENTS.md')
-EXCLUDED = {'__pycache__', '.DS_Store', '.venv', 'node_modules'}
+DIRECTORIES = ('agents', 'references', 'scripts', 'assets', 'tests', 'docs')
+ROOT_FILES = ('SKILL.md', 'README.md', 'AGENTS.md', 'requirements.txt')
+EXCLUDED = {'__pycache__', '.DS_Store', '.venv', '.venv-docs', 'node_modules'}
+# Only distributable prototype files; never recurse into uploads or local history.
+PROTOTYPE = Path('output/prototypes/cover-workbench')
+PROTOTYPE_FILES = ('README.md', 'index.html', 'style.css', 'app.js', 'server.py',
+                   'requirements.txt', 'build_preview.py', 'preview.html',
+                   'demo-assets.json', 'demo-assets/brand-placeholder.png',
+                   'demo-assets/cover.png')
 QUESTION = '是否将此次维护更新上传到 Blocksec 团队空间？'
 
 
@@ -18,6 +24,7 @@ def source_files(root):
     candidates = [root / name for name in ROOT_FILES]
     # Include intake instructions, but not user-submitted source materials.
     candidates.append(root / 'inbox/materials/README.md')
+    candidates.extend(root / PROTOTYPE / name for name in PROTOTYPE_FILES)
     for directory in DIRECTORIES:
         base = root / directory
         if base.is_dir() and not base.is_symlink():
@@ -70,7 +77,7 @@ def prepare_package(root, expected=None):
     manifest = output / 'manifest.json'
     report = {
         'skill_name': 'blocksec-social-cover',
-        'display_name': 'Blocksec内容营销配图',
+        'display_name': '有图 NoPic',
         'source_revision': revision,
         'archive': str(archive),
         'archive_sha256': hashlib.sha256(archive.read_bytes()).hexdigest(),
