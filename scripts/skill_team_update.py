@@ -9,12 +9,12 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORIES = ('agents', 'references', 'scripts', 'assets', 'tests', 'docs')
-ROOT_FILES = ('SKILL.md', 'README.md', 'AGENTS.md', 'requirements.txt')
+ROOT_FILES = ('SKILL.md', 'README.md', 'AGENTS.md', 'CHANGELOG.md', 'requirements.txt')
 EXCLUDED = {'__pycache__', '.DS_Store', '.venv', '.venv-docs', 'node_modules'}
 # Only distributable prototype files; never recurse into uploads or local history.
 PROTOTYPE = Path('output/prototypes/cover-workbench')
 PROTOTYPE_FILES = ('README.md', 'index.html', 'style.css', 'app.js', 'server.py',
-                   'requirements.txt', 'build_preview.py', 'preview.html',
+                   'requirements.txt', 'build_preview.py', 'background_workflow.py', 'preview.html',
                    'demo-assets.json', 'demo-assets/brand-placeholder.png',
                    'demo-assets/partner-placeholder.png', 'demo-assets/content.json',
                    'demo-assets/cover.png')

@@ -98,6 +98,7 @@ class TeamUpdateTests(unittest.TestCase):
     def test_package_keeps_readme_assets_and_prototype_without_runtime_files(self):
         public = ('requirements.txt', 'docs/release.md', 'docs/assets/workbench.jpg',
                   'output/prototypes/cover-workbench/server.py',
+                  'output/prototypes/cover-workbench/background_workflow.py',
                   'output/prototypes/cover-workbench/demo-assets/content.json',
                   'output/prototypes/cover-workbench/demo-assets/partner-placeholder.png',
                   'output/prototypes/cover-workbench/demo-assets/cover.png')

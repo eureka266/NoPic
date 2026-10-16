@@ -6,6 +6,7 @@ README 面向首次使用的人，保留实验项目定位。实际安装标识�
 
 - `assets/partnership-example.png` 是 [通用演示成图](../output/prototypes/cover-workbench/demo-assets/cover.png) 的展示副本，复用已有底图；两侧分别为本品牌与“合作方”文字占位，不展示实际客户名称或 Logo，也不计作完整客户案例。[演示配置](../output/prototypes/cover-workbench/demo-assets/content.json)
 - `assets/workbench.jpg` 是本地工作台真实截图。`YOUR BRAND` 与“合作方”均为文字占位；原型的能力边界见 [工作台说明](../output/prototypes/cover-workbench/README.md)。
+- `assets/background-style-workflow.jpg` 是“用 AI 做新底图”模块的真实界面截图，参考图使用仓库既有公开占位演示成图；只展示准备任务，不把测试分析或提示词冒充实际 AI 出图。更新时在隔离工作区展开“底图 → 用 AI 做新底图”，上传公开演示参考，填写想法后截图，避免显示私人素材、任务绝对路径或验收夹具结果。
 - README 中的其他图片是底图素材，已明确标注，不计作完整成品。
 
 更新展示副本（从仓库根目录执行）：

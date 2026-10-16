@@ -1,6 +1,7 @@
 .codex/skill-update-state/
 /.codex/hooks.json
 exports/team-updates/
+/exports/brand-packs/
 
 # Local environments, credentials and generated working history
 .DS_Store
@@ -19,3 +20,4 @@ node_modules/
 # Superseded local screenshots; the current generic preview is preview-nopic.jpg
 /output/prototypes/cover-workbench/preview-wide.png
 /output/prototypes/cover-workbench/preview-narrow.png
+.nopic/
