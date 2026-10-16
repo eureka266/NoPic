@@ -1,0 +1,20 @@
+.codex/skill-update-state/
+/.codex/hooks.json
+exports/team-updates/
+
+# Local environments, credentials and generated working history
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+.env
+.env.*
+!.env.example
+/inbox/**
+!/inbox/materials/
+!/inbox/materials/README.md
+/output/prototypes/cover-workbench/workspace/
+# Superseded local screenshots; the current generic preview is preview-nopic.jpg
+/output/prototypes/cover-workbench/preview-wide.png
+/output/prototypes/cover-workbench/preview-narrow.png

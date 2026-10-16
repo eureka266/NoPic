@@ -1,0 +1,23 @@
+{
+  "layout": "speaker-quote",
+  "background_id": "portrait-data-glow",
+  "background_fit": "contain",
+  "quote": "Replace with the speaker's approved quote.",
+  "quote_body": "Optional supporting excerpt from the same approved statement.",
+  "highlights": [],
+  "speaker_name": "Speaker name",
+  "speaker_role": "Role",
+  "organization": "Organization",
+  "event": "Event or seminar name",
+  "event_date": "",
+  "portrait": null,
+  "photo_original": null,
+  "logo": null,
+  "palette": {
+    "background": "#050609",
+    "text": "#F6F7FA",
+    "muted": "#B9BDC5",
+    "blue": "#248BCC",
+    "orange": "#FF7A1A"
+  }
+}

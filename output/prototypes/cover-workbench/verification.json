@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "checks": [
+    "Real PNG render and download: 1600x900",
+    "Chinese copy renders without missing glyphs",
+    "Background-only and WebP export",
+    "5 upload categories preserve bytes, names and reference flags; duplicate uploads deduplicate",
+    "Finalization creates local ZIP and manifest, without repository writes",
+    "Local-only choice persists per version",
+    "Cross-origin writes and file traversal rejected",
+    "Motion export remains unavailable without actual motion assets"
+  ]
+}

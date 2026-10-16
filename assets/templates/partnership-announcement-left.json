@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "id": "partnership-announcement-left",
+  "display_name": "合作公告｜左对齐横版",
+  "version": 1,
+  "legacy_layout": "partnership",
+  "canvas": {
+    "width": 1600,
+    "height": 900,
+    "unit": "px"
+  },
+  "layers": {
+    "blocksec-logo": {
+      "type": "image",
+      "display_name": "BlockSec Logo",
+      "asset_field": "logo",
+      "x": 96,
+      "y": 65,
+      "width": 280,
+      "height": 72,
+      "horizontal_align": "center",
+      "vertical_align": "center",
+      "lock_aspect_ratio": true
+    },
+    "partner-logo": {
+      "type": "image",
+      "display_name": "合作方 Logo",
+      "asset_field": "partner_logo",
+      "x": 450,
+      "y": 65,
+      "width": 280,
+      "height": 72,
+      "horizontal_align": "center",
+      "vertical_align": "center",
+      "lock_aspect_ratio": true
+    },
+    "partnership-separator": {
+      "type": "glyph",
+      "display_name": "合作连接符",
+      "text": "×",
+      "x": 400,
+      "y": 74,
+      "font_size": 38,
+      "font_role": "font",
+      "color_role": "body",
+      "anchor": null
+    },
+    "main-title": {
+      "type": "text",
+      "display_name": "主标题",
+      "content_field": "title",
+      "x": 96,
+      "y": 310,
+      "width": 1408,
+      "height": 300,
+      "font_size_max": 86,
+      "font_size_min": 52,
+      "align": "left",
+      "color_role": "title",
+      "font_role": "font_bold"
+    },
+    "supporting-text": {
+      "type": "text",
+      "display_name": "说明文案",
+      "content_field": "subtitle",
+      "x": 100,
+      "y": 658,
+      "width": 1320,
+      "height": 104,
+      "font_size_max": 32,
+      "font_size_min": 25,
+      "align": "left",
+      "color_role": "body",
+      "font_role": "font"
+    },
+    "category-label": {
+      "type": "text",
+      "display_name": "分类标签",
+      "content_field": "eyebrow",
+      "x": 100,
+      "y": 243,
+      "width": 1320,
+      "height": 45,
+      "font_size_max": 25,
+      "font_size_min": 22,
+      "align": "left",
+      "color_role": "accent",
+      "font_role": "font"
+    },
+    "footer-note": {
+      "type": "text",
+      "display_name": "页脚说明",
+      "content_field": "footer",
+      "x": 100,
+      "y": 797,
+      "width": 1300,
+      "height": 45,
+      "font_size_max": 24,
+      "font_size_min": 20,
+      "align": "left",
+      "color_role": "body",
+      "font_role": "font"
+    }
+  }
+}

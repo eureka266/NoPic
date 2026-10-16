@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "note": "Project design presets, not claims about current platform requirements. User dimensions take priority. Insets are suggested review guides in normalized coordinates.",
+  "presets": {
+    "blog": {"size": [1600, 900], "safe_area": [0.06, 0.06, 0.88, 0.88]},
+    "x": {"size": [1600, 900], "safe_area": [0.06, 0.06, 0.88, 0.88]},
+    "linkedin-horizontal": {"size": [1600, 900], "safe_area": [0.06, 0.06, 0.88, 0.88]},
+    "linkedin-vertical": {"size": [1200, 1600], "safe_area": [0.06, 0.06, 0.88, 0.88]},
+    "wechat-headline": {"size": [1800, 766], "safe_area": [0.06, 0.08, 0.88, 0.84]},
+    "wechat-square": {"size": [1200, 1200], "safe_area": [0.06, 0.06, 0.88, 0.88]},
+    "og": {"size": [1200, 630], "safe_area": [0.06, 0.06, 0.88, 0.88]}
+  }
+}

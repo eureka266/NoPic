@@ -1,0 +1,119 @@
+{
+  "layout": "partnership-minimal",
+  "background_id": "partnership-soft-grid",
+  "theme": "light",
+  "title": "",
+  "subtitle": "",
+  "eyebrow": "",
+  "footer": "",
+  "logo": "assets/logo-fcdce8a1716ba592.png",
+  "partner_logo": "assets/partner_logo-e8234590bbaeb48e.png",
+  "layer_overrides": {},
+  "template": {
+    "schema_version": 1,
+    "id": "partnership-announcement-minimal",
+    "display_name": "合作公告｜极简双 Logo 横版",
+    "version": 1,
+    "legacy_layout": "partnership-minimal",
+    "canvas": {
+      "width": 1600,
+      "height": 900,
+      "unit": "px"
+    },
+    "default_theme": "light",
+    "default_background_id": "partnership-soft-grid",
+    "required_assets": [
+      "logo",
+      "partner_logo"
+    ],
+    "layers": {
+      "blocksec-logo": {
+        "type": "image",
+        "display_name": "BlockSec Logo",
+        "asset_field": "logo",
+        "x": 160,
+        "y": 360,
+        "width": 520,
+        "height": 180,
+        "horizontal_align": "center",
+        "vertical_align": "center",
+        "lock_aspect_ratio": true,
+        "trim_transparent": true
+      },
+      "partner-logo": {
+        "type": "image",
+        "display_name": "合作方 Logo",
+        "asset_field": "partner_logo",
+        "x": 920,
+        "y": 360,
+        "width": 520,
+        "height": 180,
+        "horizontal_align": "center",
+        "vertical_align": "center",
+        "lock_aspect_ratio": true,
+        "trim_transparent": true
+      },
+      "partnership-separator": {
+        "type": "image",
+        "display_name": "合作连接符 ×",
+        "asset_field": "separator",
+        "default_asset": "marks/partnership-cross-ink.png",
+        "x": 772,
+        "y": 422,
+        "width": 56,
+        "height": 56,
+        "horizontal_align": "center",
+        "vertical_align": "center",
+        "lock_aspect_ratio": true
+      }
+    },
+    "relative_geometry": {
+      "unit": "canvas-fraction",
+      "coordinate_origin": "top-left",
+      "description": "派生参考值；渲染以 layers 的像素参数为准。修改单张图片使用 --layer，项目保存覆盖。",
+      "blocksec-logo": {
+        "center_x": 0.2625,
+        "center_y": 0.5,
+        "width": 0.325,
+        "height": 0.2
+      },
+      "partner-logo": {
+        "center_x": 0.7375,
+        "center_y": 0.5,
+        "width": 0.325,
+        "height": 0.2
+      },
+      "partnership-separator": {
+        "center_x": 0.5,
+        "center_y": 0.5,
+        "width": 0.035,
+        "height": 0.0622222222
+      },
+      "logo_center_distance_x": 0.475,
+      "logo_to_separator_box_gap_px": 92,
+      "side_margin_x": 0.1
+    },
+    "visual_variants": {
+      "quiet-blue-orange": {
+        "label": "浅蓝橙边角柔光",
+        "background_id": "partnership-soft-grid",
+        "prompt_reference": "references/partnership-minimal.md"
+      },
+      "warm-orange-grid": {
+        "label": "BlockSec 暖橙渐变网格",
+        "background_id": "partnership-orange-grid",
+        "prompt_reference": "references/partnership-orange-grid.md"
+      }
+    }
+  },
+  "template_id": "partnership-announcement-minimal",
+  "separator": "assets/separator-3c711689927ad48e.png",
+  "background": "assets/background-2e27dfc4f41632e1.png",
+  "font": "assets/font-525979822591a344.ttf",
+  "font_bold": "assets/font_bold-525979822591a344.ttf",
+  "schema_version": 2,
+  "size": [
+    1600,
+    900
+  ]
+}

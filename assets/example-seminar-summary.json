@@ -1,0 +1,24 @@
+{
+  "layout": "seminar-summary",
+  "background_id": "portrait-diagonal-light",
+  "background_fit": "contain",
+  "title": "Replace with the approved seminar summary title.",
+  "event": "Event or seminar name",
+  "event_date": "",
+  "footer": "",
+  "logo": null,
+  "sections": [
+    {
+      "heading": "Key takeaway 01",
+      "body": "Replace with a confirmed takeaway from the seminar."
+    },
+    {
+      "heading": "Key takeaway 02",
+      "body": "Replace with a confirmed takeaway from the seminar."
+    },
+    {
+      "heading": "Key takeaway 03",
+      "body": "Replace with a confirmed takeaway from the seminar."
+    }
+  ]
+}

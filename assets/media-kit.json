@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "updated_date": "2026-10-14",
+  "timezone": "Asia/Hong_Kong",
+  "source_collection": "BlockSec Media Kit",
+  "path_base": "所有文件路径相对于本索引所在的 assets 目录。",
+  "logo_index": "logos/index.json",
+  "logo_catalog": "references/media-kit/logo-catalog.png",
+  "assets": [
+    {
+      "id": "blocksec-phalcon-tagline-banner",
+      "brand": "Phalcon",
+      "type": "banner-reference",
+      "file": "references/media-kit/blocksec-phalcon-tagline-banner.png",
+      "dimensions": [
+        2880,
+        538
+      ],
+      "reference_only": true,
+      "contains_text": true,
+      "contains_logo": true,
+      "sha256": "aadfd72b2147fa3d378bced03af50c00b4893f4ca5793ee49892d5bfef68a413",
+      "source_material": "../inbox/materials/2026-10-14-blocksec-media-kit/blocksec-phalcon-.png",
+      "duplicate_source_material": "../inbox/materials/2026-10-14-blocksec-media-kit/register (2)_files/blocksec-phalcon-.png",
+      "notes": [
+        "为含 Logo 与宣传语的完整横幅，不能作为无字底图。",
+        "借鉴视觉时不自动采用其中宣传语作为新项目确认文案；原样复用需用户指定。"
+      ]
+    },
+    {
+      "id": "telegram-icon-white",
+      "type": "social-icon",
+      "file": "marks/social/telegram-icon-white.png",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": false,
+      "suitable_backgrounds": [
+        "dark"
+      ],
+      "reference_only": false,
+      "sha256": "cdb1ebf91107f04aa4d60b92d63f83a6e473b9d5aafb0e037b8a3383365be22e",
+      "source_material": "../inbox/materials/2026-10-14-blocksec-media-kit/register (2)_files/telegram.png",
+      "notes": [
+        "来自 Media Kit 网页附属素材，按用户需要作为独立图层使用；不是 BlockSec 或产品 Logo。"
+      ]
+    },
+    {
+      "id": "website-icon-white",
+      "type": "social-icon",
+      "file": "marks/social/website-icon-white.png",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": false,
+      "suitable_backgrounds": [
+        "dark"
+      ],
+      "reference_only": false,
+      "sha256": "1c08601c8180ca4ba610b699dc0b900f0fe0df314f8ee3c792e54b68f0045a67",
+      "source_material": "../inbox/materials/2026-10-14-blocksec-media-kit/register (2)_files/website.png",
+      "notes": [
+        "来自 Media Kit 网页附属素材，按用户需要作为独立图层使用；不是 BlockSec 或产品 Logo。"
+      ]
+    },
+    {
+      "id": "x-icon-white",
+      "type": "social-icon",
+      "file": "marks/social/x-icon-white.png",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": false,
+      "suitable_backgrounds": [
+        "dark"
+      ],
+      "reference_only": false,
+      "sha256": "28d31ea5926c2a073ebe87447817cda170fc9daf2402dfc5be70ccc86378a216",
+      "source_material": "../inbox/materials/2026-10-14-blocksec-media-kit/register (2)_files/x.png",
+      "notes": [
+        "来自 Media Kit 网页附属素材，按用户需要作为独立图层使用；不是 BlockSec 或产品 Logo。"
+      ]
+    },
+    {
+      "id": "youtube-icon-white",
+      "type": "social-icon",
+      "file": "marks/social/youtube-icon-white.png",
+      "dimensions": [
+        128,
+        128
+      ],
+      "transparent": false,
+      "suitable_backgrounds": [
+        "dark"
+      ],
+      "reference_only": false,
+      "sha256": "127a52aaa2ecd4a55dc4b954ca28d9b3759bb1dcbe26cdd019db7863eac9724a",
+      "source_material": "../inbox/materials/2026-10-14-blocksec-media-kit/register (2)_files/youtube.png",
+      "notes": [
+        "来自 Media Kit 网页附属素材，按用户需要作为独立图层使用；不是 BlockSec 或产品 Logo。"
+      ]
+    },
+    {
+      "id": "phalcon-compliance-brand-banner",
+      "brand": "Phalcon Compliance",
+      "type": "banner-reference",
+      "file": "logos/phalcon-compliance/phalcon-compliance-brand-banner.png",
+      "dimensions": [
+        1920,
+        288
+      ],
+      "reference_only": true,
+      "contains_text": true,
+      "contains_logo": true,
+      "transparent": false,
+      "source_url": "https://assets.blocksec.com/image/1769595173570/iwedaqnwbmcdaqtrb4af0qegbrc__ynud5tanqlsigtikjmbb9maaaaalonrdagacajpbqoac9iabwwi.png",
+      "source_material": "../inbox/materials/2026-10-14-phalcon-compliance-brand/iwedaqnwbmcdaqtrb4af0qegbrc__ynud5tanqlsigtikjmbb9maaaaalonrdagacajpbqoac9iabwwi.png",
+      "sha256": "d9d169a0242e91c6ce0c9f5289580a64c5be5aaf61d207f21e7bd1447162294a",
+      "notes": [
+        "用户指定为 Phalcon Compliance 专属标识来源；实际文件为含标识、背景和宣传语的完整横幅。",
+        "无透明空白区域，alpha 范围为 244–245；不是可直接叠加的透明 Logo。",
+        "仅作专属标识与视觉参考，或用户明确要求时原样复用整张横幅；不能直接作为 logo 图层或无字底图。",
+        "其中宣传语不自动作为新项目确认文案；Phalcon 通用 Logo 不登记为本产品专属 Logo。"
+      ]
+    }
+  ]
+}

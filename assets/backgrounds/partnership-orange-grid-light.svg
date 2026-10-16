@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <title>BlockSec partnership orange gradient grid — light</title>
+  <desc>White logo-safe center, faint grid, BlockSec orange and blue edge gradients. No text or logos.</desc>
+  <defs>
+    <pattern id="grid" width="180" height="180" patternUnits="userSpaceOnUse">
+      <path d="M180 0H0V180" fill="none" stroke="#ECEFF2" stroke-width="1" opacity=".7"/>
+    </pattern>
+    <radialGradient id="warm-lower-left" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(20 900) scale(600 510)">
+      <stop stop-color="#FF9E56" stop-opacity=".64"/>
+      <stop offset=".42" stop-color="#FFC188" stop-opacity=".48"/>
+      <stop offset=".75" stop-color="#FFE3C9" stop-opacity=".27"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="amber-upper-right" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1560 0) scale(560 380)">
+      <stop stop-color="#FFB24D" stop-opacity=".62"/>
+      <stop offset=".42" stop-color="#FFD27C" stop-opacity=".48"/>
+      <stop offset=".78" stop-color="#FFE9BA" stop-opacity=".25"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cool-blue-edge" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(-10 420) scale(150 300)">
+      <stop stop-color="#80C9EB" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="soft-coral" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1600 900) scale(280 250)">
+      <stop stop-color="#FFB078" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path fill="#FFFFFF" d="M0 0H1600V900H0Z"/>
+  <path fill="url(#grid)" d="M0 0H1600V900H0Z"/>
+  <path fill="url(#warm-lower-left)" d="M-140 360C90 350 20 680 280 690C470 700 520 770 590 950H-140Z"/>
+  <path fill="url(#amber-upper-right)" d="M990-120H1720V350C1510 330 1500 245 1310 245C1130 245 1030 205 1040 85Z"/>
+  <path fill="url(#cool-blue-edge)" d="M-40 100H190C115 245 120 380 50 500C12 560-20 620-40 700Z"/>
+  <path fill="url(#soft-coral)" d="M1360 900H1660V660C1510 700 1515 815 1360 900Z"/>
+</svg>

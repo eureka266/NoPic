@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BlockSec cover project manifest v1/v2",
+  "type": "object",
+  "required": ["schema_version", "mode", "background", "content", "layouts", "renderer", "draft", "outputs"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"enum": [1, 2]},
+    "mode": {"enum": ["background-only", "full-cover"]},
+    "background": {
+      "type": "object", "additionalProperties": false,
+      "required": ["master", "config"],
+      "properties": {"master": {"type": "string", "minLength": 1}, "config": {"const": "background/background-config.json"}}
+    },
+    "content": {"enum": [null, "content.json"]},
+    "layouts": {"const": "layout/platform-layouts.json"},
+    "renderer": {"enum": [null, "render_cover.py", "render_speaker_quote.py"]},
+    "draft": {"type": "boolean"},
+    "foreground": {"type": ["string", "null"]},
+    "motion": {"enum": [null, "motion/motion.json"]},
+    "presentations": {"type": "array", "items": {"enum": ["static", "motion"]}, "uniqueItems": true, "contains": {"const": "static"}},
+    "outputs": {
+      "type": "object", "additionalProperties": false,
+      "required": ["backgrounds", "covers"],
+      "properties": {"backgrounds": {"const": "output/background-only"}, "covers": {"const": "output/final-covers"}}
+    }
+  },
+  "allOf": [{"if": {"properties": {"mode": {"const": "background-only"}}},
+             "then": {"properties": {"content": {"type": "null"}, "renderer": {"type": "null"}}},
+             "else": {"properties": {"content": {"const": "content.json"}, "renderer": {"type": "string"}}}},
+            {"if": {"properties": {"schema_version": {"const": 2}}},
+             "then": {"required": ["foreground", "motion", "presentations"]}},
+            {"if": {"required": ["motion"], "properties": {"motion": {"type": "string"}}},
+             "then": {"properties": {"presentations": {"contains": {"const": "motion"}}}}}]
+}
