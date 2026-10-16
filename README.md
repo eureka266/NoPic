@@ -13,9 +13,9 @@
 npx skills add eureka266/NoPic --skill blocksec-social-cover --agent codex
 ```
 
-<a href="docs/assets/partnership-example.png"><img src="docs/assets/partnership-example.png" alt="已获准展示的 BlockSec × RedotPay 极简双 Logo 版式样例：浅色底图，双方 Logo 分列两侧" width="800"></a>
+<a href="docs/assets/partnership-example.png"><img src="docs/assets/partnership-example.png" alt="本品牌与合作方的极简合作版式演示：浅色底图，两侧均使用文字占位" width="800"></a>
 
-真实导出样例，仅展示版式，不代表经过核实的合作公告。[查看可编辑项目](assets/examples/partnership-redotpay-minimal/content.json)
+占位排版演示：本品牌与合作方均使用文字占位，正式发布前需替换为双方授权的 Logo。这不是客户案例或合作公告。[查看演示配置](output/prototypes/cover-workbench/demo-assets/content.json)
 
 ## 适合哪些配图？
 

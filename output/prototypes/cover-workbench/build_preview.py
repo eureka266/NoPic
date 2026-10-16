@@ -12,7 +12,7 @@ from PIL import Image
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
-from render_cover import draw_text
+from render_cover import choose_font, draw_text
 
 
 def data_url(path):
@@ -20,11 +20,10 @@ def data_url(path):
 
 
 def main():
-    example = ROOT / 'assets/examples/partnership-redotpay-minimal'
-    source = json.loads((example / 'content.json').read_text())
     assets = HERE / 'demo-assets'
     assets.mkdir(exist_ok=True)
-    font = example / source['font_bold']
+    chinese_font = Path('/System/Library/Fonts/Hiragino Sans GB.ttc')
+    font = str(chinese_font) if chinese_font.is_file() else choose_font('YOUR BRAND 合作方')
 
     # This is explicitly a text placeholder, not an official or invented logo.
     layer = Image.new('RGBA', (1040, 180))
@@ -32,6 +31,11 @@ def main():
               str(font), '#122337', align='center')
     placeholder = assets / 'brand-placeholder.png'
     layer.save(placeholder)
+    partner_layer = Image.new('RGBA', (1040, 180))
+    draw_text(partner_layer, '合作方', (0, 0, 1040, 180, 128, 64),
+              str(font), '#122337', align='center')
+    partner = assets / 'partner-placeholder.png'
+    partner_layer.save(partner)
 
     backgrounds = {
         'soft': ROOT / 'assets/backgrounds/partnership-soft-grid-light.png',
@@ -44,8 +48,8 @@ def main():
             'layout': 'partnership-minimal', 'theme': 'light',
             'background': str(backgrounds['soft']),
             'logo': str(placeholder),
-            'partner_logo': str(example / source['partner_logo']),
-            'font': str(example / source['font']),
+            'partner_logo': str(partner),
+            'font': str(font),
             'font_bold': str(font),
             'title': '', 'subtitle': '', 'eyebrow': '', 'footer': '',
         }
@@ -58,9 +62,16 @@ def main():
         cover = assets / 'cover.png'
         cover.write_bytes((project / 'cover.png').read_bytes())
 
+    # Portable demo input; system fonts are selected at render time, not bundled.
+    portable = {**content, 'background': '../../../../assets/backgrounds/partnership-soft-grid-light.png',
+                'logo': placeholder.name, 'partner_logo': partner.name}
+    portable.pop('font')
+    portable.pop('font_bold')
+    (assets / 'content.json').write_text(json.dumps(portable, ensure_ascii=False, indent=2) + '\n')
+
     demo = {
         'logo': data_url(placeholder),
-        'partner': data_url(example / source['partner_logo']),
+        'partner': data_url(partner),
         'cover': data_url(cover),
         'backgrounds': {key: data_url(path) for key, path in backgrounds.items()},
     }

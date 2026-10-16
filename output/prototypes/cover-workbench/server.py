@@ -25,9 +25,9 @@ BG = {
     'orange': ROOT / 'assets/backgrounds/partnership-orange-grid-light.png',
     'radial': ROOT / 'assets/backgrounds/radial-grid-symmetric-light.png',
 }
-EXAMPLE = ROOT / 'assets/examples/partnership-redotpay-minimal'
 BRAND_PLACEHOLDER = HERE / 'demo-assets/brand-placeholder.png'
-PREVIEW_REVISION = 'nopic-generic-brand-v1'
+PARTNER_PLACEHOLDER = HERE / 'demo-assets/partner-placeholder.png'
+PREVIEW_REVISION = 'nopic-generic-partner-v2'
 KB = Path.home() / 'blocksec-product-knowledge'
 CATEGORIES = {'brand': 'materials/brand', 'layout-reference': 'materials/references/layout',
               'background-reference': 'materials/references/background',
@@ -106,14 +106,11 @@ def render(data):
                        '--project', str(project), '--background', str(BG[state['background']]), '--confirm-clean']
         else:
             project.mkdir(parents=True, exist_ok=True)
-            source = json.loads((EXAMPLE / 'content.json').read_text())
             content = {'layout': 'partnership-minimal' if state['template'] == 'minimal' else 'partnership-centered',
                        'theme': 'light', 'background': str(BG[state['background']]),
                        'background_id': 'partnership-soft-grid',
                        'logo': str(BRAND_PLACEHOLDER),
-                       'partner_logo': str(EXAMPLE / source['partner_logo']),
-                       'font': str(EXAMPLE / source['font']),
-                       'font_bold': str(EXAMPLE / source['font_bold']),
+                       'partner_logo': str(PARTNER_PLACEHOLDER),
                        'title': state['title'] if state['template'] == 'centered' else '',
                        'subtitle': state['subtitle'] if state['template'] == 'centered' else '',
                        'eyebrow': '', 'footer': ''}

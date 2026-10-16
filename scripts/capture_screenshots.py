@@ -25,7 +25,7 @@ def main():
             response = page.goto(url, wait_until='networkidle')
             if response is None or not response.ok:
                 raise RuntimeError('Workbench did not return a successful page: ' + url)
-            page.get_by_role('heading', name='本公司 × RedotPay', exact=True).wait_for()
+            page.get_by_role('heading', name='本公司 × 合作方', exact=True).wait_for()
             page.evaluate('document.fonts.ready')
             page.locator('img:visible').evaluate_all(
                 '(images) => Promise.all(images.map(img => img.decode()))')

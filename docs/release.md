@@ -4,14 +4,14 @@ README 面向首次使用的人，保留实验项目定位。实际安装标识�
 
 ## 文档插图
 
-- `assets/partnership-example.png` 是 [原始成品](../assets/examples/partnership-redotpay-minimal/cover.png) 的展示副本，仅使用现有已获准样例，不改动原图。完整来源及授权范围见 [示例索引](../assets/examples/index.json)。它不是对合作事实的核验。
-- `assets/workbench.jpg` 是本地工作台真实截图。`YOUR BRAND` 是文字占位；原型的能力边界见 [工作台说明](../output/prototypes/cover-workbench/README.md)。
+- `assets/partnership-example.png` 是 [通用演示成图](../output/prototypes/cover-workbench/demo-assets/cover.png) 的展示副本，复用已有底图；两侧分别为本品牌与“合作方”文字占位，不展示实际客户名称或 Logo，也不计作完整客户案例。[演示配置](../output/prototypes/cover-workbench/demo-assets/content.json)
+- `assets/workbench.jpg` 是本地工作台真实截图。`YOUR BRAND` 与“合作方”均为文字占位；原型的能力边界见 [工作台说明](../output/prototypes/cover-workbench/README.md)。
 - README 中的其他图片是底图素材，已明确标注，不计作完整成品。
 
 更新展示副本（从仓库根目录执行）：
 
 ```bash
-cp assets/examples/partnership-redotpay-minimal/cover.png docs/assets/partnership-example.png
+cp output/prototypes/cover-workbench/demo-assets/cover.png docs/assets/partnership-example.png
 ```
 
 刷新界面截图：先按 [工作台说明](../output/prototypes/cover-workbench/README.md) 启动本地服务，再在仓库根目录执行：
@@ -49,6 +49,6 @@ npx skills list --agent codex
 - **许可证**：尚未选定源码许可证，不显示 MIT 徽章。`skill-publisher` 脚本即使使用 `--dry-run`，也会在缺少 LICENSE 时自动写入 MIT；不要在当前源码直接运行这个默认动作。
 - **字体分发**：既有完整样例附带 Arial 字体副本，其字体声明限制使用范围；公开再分发许可尚未核对。展示样例的授权不等于字体文件的分发授权，应核对许可或以有明确再分发许可的字体制作新的示例项目，原文件保留。
 - **品牌适配**：底层仍保留既有品牌默认配置；预览的泛指文案不代表技能已完成任意品牌的首次配置流程。
-- **效果图库**：当前只有一张获准展示的完整示例。新增活动、周报等成品前先取得示例素材授权并完成实际出图，不用参考海报或背景填充数量。
+- **效果图库**：首页仅展示通用占位版式与工作台截图。新增真实成品案例前先取得示例素材授权并完成实际出图，不用占位演示、参考海报或背景填充成品数量。
 
 GitHub 发布与团队工作区上传是独立动作。本地候选 ZIP 不代表已安装或已同步到团队。

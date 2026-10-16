@@ -16,6 +16,7 @@ PROTOTYPE = Path('output/prototypes/cover-workbench')
 PROTOTYPE_FILES = ('README.md', 'index.html', 'style.css', 'app.js', 'server.py',
                    'requirements.txt', 'build_preview.py', 'preview.html',
                    'demo-assets.json', 'demo-assets/brand-placeholder.png',
+                   'demo-assets/partner-placeholder.png', 'demo-assets/content.json',
                    'demo-assets/cover.png')
 QUESTION = '是否将此次维护更新上传到 Blocksec 团队空间？'
 
