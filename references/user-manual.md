@@ -8,6 +8,8 @@
 
 在对话中提供图片、正式 Logo 或已有项目目录，再输入指令与中文需求即可。以下 `/...` 是 skill 的对话子指令，无需在终端运行。
 
+在 Codex 中自然语言调用 `$blocksec-social-cover` 时，skill 会先启动或复用本地 NoPic 工作台，并尝试在 Codex 右侧面板打开它。你可以在面板中上传参考图、Logo、人物照片、产品截图和字体，同时继续在当前会话里描述用途、文案和修改意见。工作台保存的当前草稿位于 `output/prototypes/cover-workbench/workspace/workbench-state.json`，最近一次会话任务位于 `workspace/session-handoffs/latest.json` / `latest.md`；如果宿主不支持侧边面板，skill 会返回本地 URL 并继续使用会话流程。
+
 ## 首次使用
 
 在当前对话中第一次调用任意子指令时，skill 会先介绍可制作的内容类型和能力，再询问你要制作哪一种。Codex 的问答工具可用且当前模式允许调用时，使用结构化选择；ChatGPT 按当前会话提供的能力交互。没有可用选择工具时，以普通中文问句完成同样的流程。可选范围包括：
