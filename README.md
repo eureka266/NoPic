@@ -78,11 +78,17 @@ python3 -m venv .venv
 
 ## 想先看看界面？
 
-下面是本地预览工作台原型，可切换已有底图、修改部分文案并导出静态图。**技能主要通过对话使用，工作台是可选交互面板**；在 Codex 中用自然语言调用 skill 时，会自动启动并尝试在右侧打开工作台。工作台通过共享本地状态和会话任务清单连接当前会话，但浏览器不能直接向当前会话注入消息。新背景生成、任意 Logo 槽位替换和动画制作仍未接入。
+下面是本地预览工作台原型，可切换已有底图、修改部分文案并导出静态图。**技能主要通过对话使用，工作台是可选交互面板**；在 Codex 中用自然语言调用 skill 时，会自动启动并尝试在右侧打开工作台。工作台通过共享本地状态和会话任务清单连接当前会话，但浏览器不能直接向当前会话注入消息。“用 AI 做新底图”支持把参考图直接粘贴给 Codex，也支持工作台上传或粘贴；含字完整海报可以先提炼风格提示词，再按选择由当前对话生成无字底图。网页负责准备任务与回读分析；任意 Logo 槽位替换和动画制作仍未接入。
 
 <a href="docs/assets/workbench.jpg"><img src="docs/assets/workbench.jpg" alt="NoPic 本地工作台真实截图：本品牌占位、素材准备、配图预览和版本管理" width="800"></a>
 
 [启动本地工作台](output/prototypes/cover-workbench/README.md) · [下载单文件外观预览](https://github.com/eureka266/NoPic/blob/main/output/prototypes/cover-workbench/preview.html) · [刷新文档插图](docs/release.md)
+
+## 有喜欢的参考图，但不会写设计提示词？
+
+在工作台“底图 → 用 AI 做新底图”中，默认选择“粘贴到 Codex 对话”。想法可以留空，也可以写“喜欢暖色和光感，想更干净，左侧放标题”。点击“准备风格分析任务”，回到当前 Codex 对话，把**参考图与复制的任务提示一起发送**。带标题、Logo、人物的完整海报也可以，AI 会提炼背景的配色、材质、光影与构图，给出无字底图提示词。
+
+也可以在工作台上传、拖入或粘贴图片，勾选本次参考。默认先分析；选择“提炼后直接生成无字底图”才会要求 Codex 新绘制。分析保存后会回到工作台供修改，再准备下一次任务。原图与当前底图保留，新图在对话里核对后决定采用。[完整操作与示例](references/background-style-workflow.md)
 
 ## 常见问题
 
@@ -95,6 +101,7 @@ python3 -m venv .venv
 | 改字后图没更新 / 只剩一张 PNG | 提供原项目目录重新编译；只有 PNG 时无法可靠恢复独立图层。[项目说明](references/asset-model.md) |
 | 单文件预览不能真实保存 / 导出 | `preview.html` 仅供外观体验；真实操作需要启动本地服务。[启动说明](output/prototypes/cover-workbench/README.md) |
 | 工作台如何交给 Codex 会话 | 自然语言调用 skill 会自动启动并尝试打开右侧面板；上传素材后点击“准备当前会话任务”，工作台会生成 `.nopic/workspace/session-handoffs/latest.json` / `latest.md` 并复制提示词，回到当前会话粘贴即可。 |
+| 参考图里有标题、人物或 Logo 怎么办 | 在“用 AI 做新底图”中先分析风格，或直接把图粘贴给 Codex 说“只提炼底图风格，先不生成”。AI 排除前景，给出可编辑提示词；不会自动把原海报当成底图。 |
 | 如何让同事复用品牌资产 | 将带 `manifest.json` 的 NoPic 品牌素材 ZIP 附到 Codex 对话，要求安装品牌包；skill 会自动安装到当前项目 `.nopic/brand-packs/`，无需指定 skill 路径。[品牌素材包说明](references/brand-pack.md) |
 
 ## 继续了解与反馈

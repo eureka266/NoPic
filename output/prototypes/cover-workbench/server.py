@@ -1,6 +1,7 @@
 """Local workbench server. No AI execution, hook installation, Git commit, or remote writes."""
 import argparse
 import base64
+from copy import deepcopy
 import hashlib
 import json
 import mimetypes
@@ -14,6 +15,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import quote, unquote, urlparse
 from zoneinfo import ZoneInfo
+
+from background_workflow import prepare_handoff, read_result
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -157,7 +160,7 @@ def brand_pack_view():
 
 
 def read_state():
-    state = {**DEFAULT, **(json.loads(STATE.read_text()) if STATE.exists() else {})}
+    state = {**deepcopy(DEFAULT), **(json.loads(STATE.read_text()) if STATE.exists() else {})}
     if BRAND_PACK_MANIFEST:
         if state['background'] not in BG:
             state['background'] = DEFAULT['background']
@@ -367,6 +370,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_data({'error': 'Local same-origin requests only'}, status=403)
         path = unquote(urlparse(self.path).path)
         try:
+            if path == '/api/background-result':
+                state = read_state()
+                return self.send_data({'task_id': (state.get('background_handoff') or {}).get('id'),
+                                       'result': read_result(WORK, state.get('background_handoff'))})
             if path == '/api/state':
                 return self.send_data(state_view())
             if path == '/api/download':
@@ -401,6 +408,8 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < length <= 28 * 1024 * 1024:
                 raise ValueError('Upload limit: 20 MB per file')
             data = json.loads(self.rfile.read(length))
+            if not isinstance(data, dict):
+                raise ValueError('Expected a JSON object')
             with LOCK:
                 path = urlparse(self.path).path
                 if path == '/api/render':
@@ -442,6 +451,15 @@ class Handler(BaseHTTPRequestHandler):
                     write_json(STATE, state)
                     write_json(WORK / 'inbox/materials-index.json', state['uploads'])
                     return self.send_data({'asset': record, 'state': state_view()})
+                if path == '/api/background-handoff':
+                    state = read_state()
+                    request, receipt = prepare_handoff(data, state, WORK, now())
+                    state['background_request'] = request
+                    state['background_handoff'] = receipt
+                    state['session_handoff'] = receipt
+                    state['revision'] += 1
+                    write_json(STATE, state)
+                    return self.send_data({'handoff': receipt, 'state': state_view()})
                 if path == '/api/request':
                     kind = data.get('kind')
                     if kind not in ('background', 'motion'):

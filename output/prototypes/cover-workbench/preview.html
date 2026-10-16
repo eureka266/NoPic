@@ -16,6 +16,11 @@
 
 .brand-name{font-size:22px;font-weight:700;letter-spacing:-.04em;line-height:1}
 
+/* Reference-led background workflow: readable in the Codex side panel. */
+.generation fieldset{border:0;padding:0;margin:22px 0;min-width:0}.generation legend{font-weight:650;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px}.generation-intro{line-height:1.65}.step-number{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border:1px solid var(--line);border-radius:50%;font-size:11px;color:var(--orange)}.optional{font-size:11px;font-weight:400;color:var(--muted)}.source-options{display:flex;gap:8px;flex-wrap:wrap}.source-options label{flex:1;min-width:130px;border:1px solid var(--line);padding:10px 8px;border-radius:8px;font-size:12px;cursor:pointer}.source-options label:has(input:checked){border-color:var(--orange);background:#fff5eb}.generation input[type=radio],.generation input[type=checkbox]{accent-color:#b34c20;margin:0 6px 0 0;flex-shrink:0}.reference-dropzone{width:100%;border:1px dashed #b9bdae;background:#fafbf6;border-radius:8px;padding:17px 10px;color:var(--ink);font-size:12px;line-height:1.7}.reference-dropzone span{display:block;color:#65705a;font-size:10px}.reference-dropzone.dragover{border-color:var(--orange);background:#fff5eb}.reference-list{display:grid;gap:8px;margin-top:10px;max-height:260px;overflow:auto}.reference-item{display:flex;align-items:center;gap:8px;padding:7px;border:1px solid var(--line);border-radius:8px;font-size:12px;cursor:pointer}.reference-item img{width:56px;height:40px;object-fit:cover;border-radius:4px}.reference-item span{overflow-wrap:anywhere;min-width:0}.generation-layout{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.generation-layout label{font-size:12px;min-width:0}.generation-layout select{margin-top:6px;width:100%}.background-next>label{display:flex;align-items:flex-start;gap:2px;margin:12px 0;font-size:13px;cursor:pointer}.background-next input{margin-top:3px!important}.background-next small{display:block;margin-top:5px;line-height:1.6;color:#65705a}.background-analysis{border-top:1px solid var(--line);padding-top:16px;margin:16px 0}.background-analysis strong{font-size:13px}.background-analysis dl{font-size:12px;line-height:1.6}.background-analysis dt{font-weight:650;margin-top:8px}.background-analysis dd{margin:0;color:#59674e}.background-task-output{border:1px solid var(--line);background:#fafbf6;padding:12px;border-radius:8px;margin-top:14px;overflow-wrap:anywhere}.background-task-output p{font-size:12px;line-height:1.65}.background-task-output textarea{font-size:12px;margin-bottom:10px}.generation .primary{justify-content:center}.generation textarea{width:100%;box-sizing:border-box}.generation button:focus-visible,.generation input:focus-visible,.generation select:focus-visible{outline:2px solid #b34c20;outline-offset:3px}
+
+.generation p{font-size:12px;color:#65705a;line-height:1.65}.generation summary{font-size:13px;font-weight:650;color:#526746}.generation .step-number{color:var(--orange-ink)}.generation .background-next small{font-size:11px}.generation-layout select{font-size:12px;padding-left:7px;padding-right:18px}.generation .primary{white-space:normal}
+
 </style>
 </head>
 <body>
@@ -94,7 +99,39 @@
    <section class="tab-pane" id="tab-backgrounds" hidden>
     <div class="pane-title"><h2>选择底图</h2><span class="micro-tag">固定素材</span></div><p class="field-help top-help">换底图保留当前文案与品牌素材。</p>
     <div id="background-options" class="background-options"></div>
-    <details class="generation"><summary>需要 AI 新底图？</summary><p>描述画面与留白要求，先保存生成需求。</p><label class="sr-only" for="background-brief">新底图需求</label><textarea id="background-brief" rows="3" placeholder="例如：浅橙色，中央留白，参考上传的底图参考图"></textarea><button class="secondary full" id="save-background-request">保存生成需求</button><small>原型不调用 AI；需由 Codex 后续执行。</small></details>
+    <details class="generation" id="background-generation">
+     <summary>用 AI 做新底图</summary>
+     <p class="generation-intro">贴一张喜欢的图，说说想留下什么。含文字的完整海报也可以。</p>
+     <fieldset class="reference-source"><legend><span class="step-number">1</span> 给一张参考图</legend>
+      <div class="source-options"><label><input type="radio" name="reference-source" value="chat" checked>粘贴到 Codex 对话</label><label><input type="radio" name="reference-source" value="panel">上传到工作台</label></div>
+      <p id="reference-chat-help" class="field-help">准备好任务后，回到当前 Codex 对话，把参考图和任务提示一起粘贴发送。</p>
+      <div id="reference-panel" hidden>
+       <button class="reference-dropzone" id="background-reference-dropzone">点击上传、拖入或在这里粘贴图片<span>PNG / JPG / WebP / GIF · 每张最多 20 MB</span></button>
+       <input id="background-reference-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+       <div id="background-reference-list" class="reference-list" aria-label="选择本次参考图"></div>
+       <p class="field-help">只分析勾选的图片。原件保留为风格参考。</p>
+      </div>
+     </fieldset>
+     <fieldset><legend><span class="step-number">2</span> 说说你的想法 <span class="optional">可选</span></legend>
+      <label class="sr-only" for="background-brief">希望保留的感觉</label>
+      <textarea id="background-brief" rows="3" maxlength="6000" placeholder="例如：喜欢这张图的暖橙色和柔和光感，想要更干净，左边放标题。拿不准也可以留空。"></textarea>
+      <div class="generation-layout"><label for="background-ratio">图片比例<select id="background-ratio"><option value="16:9">16:9 横版</option><option value="3:4">3:4 竖版</option><option value="1:1">1:1 方图</option><option value="4:5">4:5 竖版</option></select></label><label for="background-text-space">哪里放内容<select id="background-text-space"><option value="auto">让 AI 建议</option><option value="left">左侧放标题</option><option value="center">中央放内容</option><option value="right">右侧放内容</option><option value="top">上方放标题</option></select></label></div>
+     </fieldset>
+     <fieldset class="background-next"><legend><span class="step-number">3</span> 让 Codex 做什么</legend>
+      <label><input type="radio" name="background-intent" value="analyze" checked><span>先提炼风格提示词<small>先看懂参考图，拿到可修改的底图描述。</small></span></label>
+      <label><input type="radio" name="background-intent" value="generate"><span>提炼后直接生成无字底图<small>按参考风格新绘制，保留当前已选底图。</small></span></label>
+     </fieldset>
+     <div id="background-analysis" class="background-analysis" hidden>
+      <strong id="background-style-summary"></strong><dl id="background-style-facts"></dl>
+      <label class="field-label" for="background-style-prompt">底图提示词 · 可直接修改</label><textarea id="background-style-prompt" rows="5" maxlength="6000"></textarea>
+      <p id="background-style-exclusions" class="field-help"></p><p class="field-help">想微调？改上方想法或这段提示词，再准备一次任务。</p>
+     </div>
+     <button class="primary full" id="prepare-background-task">准备风格分析任务</button>
+     <p class="field-help">AI 会借鉴配色、材质与光影，排除文字、Logo、二维码和人物等前景。执行发生在当前 Codex 对话。</p>
+     <div id="background-task-output" class="background-task-output" hidden>
+      <p id="background-task-status" role="status"></p><label class="field-label" for="background-task-prompt">粘贴到当前 Codex 对话</label><textarea id="background-task-prompt" rows="4" readonly></textarea><button class="secondary full" id="copy-background-task">复制任务提示</button>
+     </div>
+    </details>
    </section>
    <section class="tab-pane" id="tab-delivery" hidden>
     <div class="pane-title"><h2>导出设置</h2><span class="micro-tag">本地</span></div><label class="field-label" for="format">图片格式</label><select id="format"><option value="png">PNG · 无损图片</option><option value="webp">WebP · 轻量图片</option></select>
@@ -212,6 +249,7 @@ function displayFiles() {
     row.querySelector('.micro-tag').textContent=categories[file.category];
     $('uploaded-files').append(row);
   }
+  refreshBackgroundReferences();
   const count = (state.uploads || []).length;
   $('handoff-session').querySelector('span').textContent = count ? `准备当前会话任务（${count} 个素材）` : '准备当前会话任务';
 }
@@ -322,12 +360,11 @@ for(const event of ['dragleave','drop']) $('dropzone').addEventListener(event,e=
 $('duration').oninput=()=>{$('duration-label').textContent=$('duration').value+' 秒';};
 async function saveRequest(kind) {
   if(!online)return toast('请先启动本地服务。',true);
-  const brief=$(kind==='motion'?'motion-brief':'background-brief').value.trim();
+  const brief=$('motion-brief').value.trim();
   if(!brief)return toast('请先填写希望制作的效果。',true);
   try {await renderNow();const result=await api('/api/request',{kind,brief});toast('需求已保存到 requests/，尚未执行。');}
   catch(error){toast(error.message,true);}
 }
-$('save-background-request').onclick=()=>saveRequest('background');
 $('save-motion-request').onclick=()=>saveRequest('motion');
 $('export').onclick=async()=>{
   $('export').disabled=true;
@@ -340,10 +377,143 @@ $('dismiss').onclick=async()=>{try{acceptResult(await api('/api/dismiss',{}));$(
 $('expand').onclick=()=>{$('lightbox-image').src=$('preview').src;$('lightbox').showModal();};
 $('close-lightbox').onclick=()=>$('lightbox').close();
 $('lightbox').addEventListener('click',event=>{if(event.target===$('lightbox'))$('lightbox').close();});
+// Background intent stays in the workbench; image understanding runs in the current chat.
+let selectedReferenceIds = new Set(), backgroundResultTimer, shownBackgroundResult = '', ignoreBackgroundResult = false;
+function markBackgroundTaskDirty() {$('background-task-output').hidden=true;}
+function resetBackgroundAnalysis() {
+  markBackgroundTaskDirty();
+  ignoreBackgroundResult=true;clearTimeout(backgroundResultTimer);
+  $('background-analysis').hidden=true;$('background-style-prompt').value='';
+}
+function backgroundSource() {return document.querySelector('[name="reference-source"]:checked').value;}
+function backgroundIntent() {return document.querySelector('[name="background-intent"]:checked').value;}
+function refreshBackgroundReferences() {
+  const list=$('background-reference-list'); list.replaceChildren();
+  const files=(state.uploads || []).filter(file=>['background-reference','layout-reference'].includes(file.category) && /\.(png|jpe?g|webp|gif)$/i.test(file.name));
+  if(!files.length) {const hint=document.createElement('p');hint.className='field-help';hint.textContent='还没有参考图，先上传一张喜欢的图片。';list.append(hint);}
+  for(const file of files) {
+    const label=document.createElement('label');label.className='reference-item';
+    const input=document.createElement('input');input.type='checkbox';input.value=file.id;input.checked=selectedReferenceIds.has(file.id);
+    input.onchange=()=>{resetBackgroundAnalysis();if(input.checked)selectedReferenceIds.add(file.id);else selectedReferenceIds.delete(file.id);};
+    const image=document.createElement('img');image.src='/workspace/'+file.relative_path.split('/').map(encodeURIComponent).join('/');image.alt='';
+    const name=document.createElement('span');name.textContent=file.name;
+    label.append(input,image,name);list.append(label);
+  }
+}
+function syncBackgroundWorkflow() {
+  const panel=backgroundSource()==='panel';
+  $('reference-panel').hidden=!panel;$('reference-chat-help').hidden=panel;
+  $('prepare-background-task').textContent=backgroundIntent()==='generate'?'准备新底图生成任务':'准备风格分析任务';
+}
+function showBackgroundTask(receipt, message) {
+  $('background-task-output').hidden=false;
+  $('background-task-prompt').value=receipt.prompt;
+  $('background-task-status').textContent=message || '任务已保存，等待在 Codex 对话发送。';
+}
+function restoreBackgroundWorkflow() {
+  const request=state.background_request;
+  if(request) {
+    $('background-brief').value=request.brief || '';
+    $('background-ratio').value=request.aspect_ratio;
+    $('background-text-space').value=request.text_space;
+    document.querySelectorAll('[name="reference-source"]').forEach(input=>input.checked=input.value===request.reference_source);
+    document.querySelectorAll('[name="background-intent"]').forEach(input=>input.checked=input.value===request.intent);
+    selectedReferenceIds=new Set(request.reference_ids || []);
+    $('background-style-prompt').value=request.style_prompt || '';
+    if(request.style_prompt)$('background-analysis').hidden=false;
+  }
+  refreshBackgroundReferences();syncBackgroundWorkflow();
+  if(state.background_handoff) {showBackgroundTask(state.background_handoff);pollBackgroundResult();}
+}
+async function uploadBackgroundReferences(files) {
+  if(!online)return toast('请启动本地服务后上传参考图。',true);
+  const button=$('background-reference-dropzone');button.disabled=true;
+  let completed=0;
+  try {
+    for(const file of files) {
+      if(!/\.(png|jpe?g|webp|gif)$/i.test(file.name))throw new Error('请选择 PNG、JPG、WebP 或 GIF 图片。');
+      if(file.size>20*1024*1024)throw new Error(file.name+' 超过 20 MB。');
+      const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.onerror=()=>reject(new Error('无法读取图片'));reader.readAsDataURL(file);});
+      const result=await api('/api/upload',{category:'background-reference',name:file.name,data});
+      resetBackgroundAnalysis();state.uploads=result.state.uploads;selectedReferenceIds.add(result.asset.id);completed++;
+      displayFiles();refreshBackgroundReferences();
+    }
+    if(completed)toast(completed+' 张参考图已保留原件并选中。');
+  } catch(error) {toast((completed?'已保存 '+completed+' 张。':'')+error.message,true);}
+  finally {button.disabled=false;$('background-reference-input').value='';}
+}
+async function copyBackgroundTask() {
+  const field=$('background-task-prompt');
+  try {await navigator.clipboard.writeText(field.value);toast('任务已复制，回到当前 Codex 对话粘贴发送。');return true;}
+  catch(error) {field.focus();field.select();toast('请手动复制已选中的任务提示。');return false;}
+}
+async function prepareBackgroundTask() {
+  if(!online)return toast('请先启动本地服务，保存任务与参考原件。',true);
+  const source=backgroundSource();
+  if(source==='panel' && !selectedReferenceIds.size)return toast('请先上传或勾选本次参考图。',true);
+  const payload={reference_source:source,intent:backgroundIntent(),reference_ids:[...selectedReferenceIds],
+    brief:$('background-brief').value.trim(),text_space:$('background-text-space').value,
+    aspect_ratio:$('background-ratio').value,style_prompt:$('background-style-prompt').value.trim()};
+  const button=$('prepare-background-task');button.disabled=true;
+  try {
+    // Save the current copy without rendering or replacing the selected background.
+    const saved=await api('/api/save',draft());Object.assign(state,saved);
+    const result=await api('/api/background-handoff',payload);
+    Object.assign(state,result.state);shownBackgroundResult='';ignoreBackgroundResult=false;
+    showBackgroundTask(result.handoff);
+    const copied=await copyBackgroundTask();
+    $('background-task-status').textContent=(copied?'任务已保存，提示已复制。':'任务已保存，请复制下方提示。')+(source==='chat'?' 回到 Codex 对话，把参考图和这段提示一起发送。':' 回到 Codex 对话粘贴发送。')+' AI 尚未执行。';
+    savedText('底图任务已保存');pollBackgroundResult();
+  } catch(error) {toast(error.message,true);}
+  finally {button.disabled=false;}
+}
+async function pollBackgroundResult() {
+  clearTimeout(backgroundResultTimer);
+  const receipt=state.background_handoff;
+  if(!online || !receipt || ignoreBackgroundResult)return;
+  try {
+    const response=await api('/api/background-result');
+    if(response.task_id!==receipt.id || state.background_handoff?.id!==receipt.id || ignoreBackgroundResult)return;
+    const result=response.result;
+    if(result?.error) $('background-task-status').textContent=result.error+'；请让 Codex 按任务协议补全结果。';
+    else if(result && shownBackgroundResult!==receipt.id) {
+      $('background-analysis').hidden=false;$('background-style-summary').textContent=result.summary;
+      const facts=$('background-style-facts');facts.replaceChildren();
+      for(const [key,label] of [['palette','配色'],['material','材质'],['lighting','光影'],['composition','构图与留白']]) {
+        const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=result[key];facts.append(dt,dd);
+      }
+      // A pending task must not overwrite edits made while Codex was working.
+      if(!$('background-style-prompt').value.trim() || $('background-style-prompt').value.trim()===(state.background_request?.style_prompt || ''))$('background-style-prompt').value=result.prompt;
+      $('background-style-exclusions').textContent='排除：'+result.negative_prompt;
+      $('background-task-status').textContent=result.generated_file?'分析与新底图已保存；请在对话中查看图片并选择是否采用。':'风格提示词已返回。可以直接修改，再选择生成新底图。';
+      shownBackgroundResult=receipt.id;
+    }
+    if(result && !result.error)return;
+  } catch(error) { /* Keep the saved prompt usable if the service temporarily stops. */ }
+  backgroundResultTimer=setTimeout(()=>{if(!document.hidden)pollBackgroundResult();},4000);
+}
+function setupBackgroundWorkflow() {
+  document.querySelectorAll('[name="reference-source"]').forEach(input=>input.onchange=()=>{resetBackgroundAnalysis();syncBackgroundWorkflow();});
+  document.querySelectorAll('[name="background-intent"]').forEach(input=>input.onchange=()=>{markBackgroundTaskDirty();syncBackgroundWorkflow();});
+  ['background-brief','background-ratio','background-text-space','background-style-prompt'].forEach(id=>$(id).addEventListener('input',markBackgroundTaskDirty));
+  $('prepare-background-task').onclick=prepareBackgroundTask;$('copy-background-task').onclick=copyBackgroundTask;
+  const dropzone=$('background-reference-dropzone');dropzone.onclick=()=>$('background-reference-input').click();
+  $('background-reference-input').onchange=()=>uploadBackgroundReferences(Array.from($('background-reference-input').files));
+  for(const event of ['dragenter','dragover'])dropzone.addEventListener(event,e=>{e.preventDefault();dropzone.classList.add('dragover');});
+  for(const event of ['dragleave','drop'])dropzone.addEventListener(event,e=>{e.preventDefault();dropzone.classList.remove('dragover');if(event==='drop')uploadBackgroundReferences(Array.from(e.dataTransfer.files));});
+  dropzone.addEventListener('paste',event=>{
+    const files=Array.from(event.clipboardData?.files || []);
+    if(files.length) {event.preventDefault();uploadBackgroundReferences(files);}
+  });
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden && state.background_handoff && shownBackgroundResult!==state.background_handoff.id)pollBackgroundResult();});
+  syncBackgroundWorkflow();refreshBackgroundReferences();
+}
+
 applyState();
+setupBackgroundWorkflow();
 (async()=>{
   try {
-    state=await api('/api/state');online=true;applyState();
+    state=await api('/api/state');online=true;applyState();restoreBackgroundWorkflow();
     if(state.submission)showFinalization();
     await renderNow();
   } catch(error) {savedText('离线外观预览');$('action-status').textContent='需启动服务才能保存与导出';toast('当前为外观预览。运行 server.py 可启用上传、合成和导出。',true);}
