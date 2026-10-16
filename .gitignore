@@ -1,6 +1,7 @@
 .codex/skill-update-state/
 /.codex/hooks.json
 exports/team-updates/
+/exports/brand-packs/
 
 # Local environments, credentials and generated working history
 .DS_Store
