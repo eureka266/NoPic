@@ -33,12 +33,14 @@ def project_root(explicit: str | None) -> Path:
 
 
 def safe_value(value: object, field: str) -> str:
-    if not isinstance(value, str) or not value or any(char not in SAFE_ID for char in value):
+    if not isinstance(value, str) or not value or value in {'.', '..'} or any(char not in SAFE_ID for char in value):
         raise ValueError(f'Invalid brand pack {field}')
     return value
 
 
 def safe_member(name: str) -> PurePosixPath:
+    if not isinstance(name, str) or '\\' in name or ':' in name:
+        raise ValueError('Unsafe archive path')
     path = PurePosixPath(name)
     if path.is_absolute() or '..' in path.parts or not path.parts:
         raise ValueError(f'Unsafe archive path: {name}')
@@ -52,6 +54,8 @@ def is_symlink(info: zipfile.ZipInfo) -> bool:
 
 def validate_manifest(root: Path) -> dict:
     manifest_file = root / 'manifest.json'
+    if not manifest_file.resolve().is_relative_to(root.resolve()):
+        raise ValueError('Manifest is outside the brand pack')
     if not manifest_file.is_file():
         raise ValueError('Brand pack must contain manifest.json at its root')
     manifest = json.loads(manifest_file.read_text(encoding='utf-8'))
@@ -65,7 +69,7 @@ def validate_manifest(root: Path) -> dict:
         raise ValueError('Brand pack display_name must be a string')
 
     files = []
-    for section in ('logos', 'backgrounds', 'references', 'fonts', 'examples'):
+    for section in ('logos', 'backgrounds', 'references', 'fonts', 'examples', 'templates'):
         entries = manifest.get(section, [])
         if not isinstance(entries, list):
             raise ValueError(f'Brand pack {section} must be a list')
@@ -84,6 +88,41 @@ def validate_manifest(root: Path) -> dict:
             if 'id' in entry:
                 safe_value(entry['id'], f'{section} id')
 
+    def add_file(relative):
+        member = safe_member(relative)
+        file = root.joinpath(*member.parts).resolve()
+        if not file.is_relative_to(root.resolve()) or not file.is_file():
+            raise ValueError('Brand pack file is missing or outside the pack: ' + str(relative))
+        files.append(str(member))
+        return file
+
+    if (root / 'README.md').exists():
+        add_file('README.md')
+
+    declared = manifest.get('files', [])
+    if not isinstance(declared, list):
+        raise ValueError('Brand pack files must be a list')
+    for relative in declared:
+        add_file(relative)
+    catalogs = manifest.get('catalogs', {})
+    if not isinstance(catalogs, dict):
+        raise ValueError('Brand pack catalogs must be an object')
+    for name, relative in catalogs.items():
+        safe_value(name, 'catalog name')
+        catalog = add_file(relative)
+        data = json.loads(catalog.read_text(encoding='utf-8'))
+        if name == 'templates':
+            if not isinstance(data, dict) or not isinstance(data.get('templates'), list):
+                raise ValueError('Template catalog must contain a templates list')
+            for entry in data['templates']:
+                if not isinstance(entry, dict):
+                    raise ValueError('Template catalog entry must be an object')
+                child = safe_member(entry.get('file'))
+                target = catalog.parent.joinpath(*child.parts).resolve()
+                if not target.is_relative_to(root.resolve()):
+                    raise ValueError('Template catalog entry escapes the pack')
+                add_file(str(target.relative_to(root.resolve())))
+
     defaults = manifest.get('defaults', {})
     if not isinstance(defaults, dict):
         raise ValueError('Brand pack defaults must be an object')
@@ -96,6 +135,16 @@ def validate_manifest(root: Path) -> dict:
     manifest['_validated_files'] = sorted(set(files))
     return manifest
 
+
+
+def pack_fingerprint(root: Path, manifest: dict) -> str:
+    digest = hashlib.sha256(json.dumps({key: value for key, value in manifest.items()
+                                     if key != '_validated_files'},
+                                    sort_keys=True, ensure_ascii=False).encode())
+    for relative in manifest['_validated_files']:
+        digest.update(relative.encode())
+        digest.update(hashlib.sha256((root / relative).read_bytes()).digest())
+    return digest.hexdigest()
 
 def extract_zip(source: Path, destination: Path) -> Path:
     total = 0
@@ -143,14 +192,18 @@ def install(source: Path, target_project: Path) -> dict:
         destination.parent.mkdir(parents=True, exist_ok=True)
         if destination.exists():
             existing = validate_manifest(destination)
-            if existing.get('_validated_files') != manifest.get('_validated_files'):
+            if pack_fingerprint(destination, existing) != pack_fingerprint(extracted, manifest):
                 raise ValueError(f'Brand pack already exists with different contents: {destination}')
             reused = True
         else:
             temporary_destination = packs_root / ('.' + version + '.tmp')
             if temporary_destination.exists():
                 shutil.rmtree(temporary_destination)
-            shutil.copytree(extracted, temporary_destination)
+            temporary_destination.mkdir(parents=True)
+            for relative in ('manifest.json', *manifest['_validated_files']):
+                target = temporary_destination / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(extracted / relative, target)
             validate_manifest(temporary_destination)
             temporary_destination.replace(destination)
             reused = False

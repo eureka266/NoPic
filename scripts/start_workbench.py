@@ -14,6 +14,7 @@ import sys
 import time
 from urllib.error import URLError
 from urllib.request import urlopen
+from install_brand_pack import validate_manifest, pack_fingerprint
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -101,9 +102,10 @@ def stop_process(pid: int) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, default=59054)
+    parser.add_argument('--project-root')
     args = parser.parse_args()
 
-    project = discover_project_root()
+    project = Path(args.project_root).expanduser().resolve() if args.project_root else discover_project_root()
     pack = active_brand_pack(project)
     workspace = project / '.nopic/workspace'
     pid_file = workspace / 'workbench.pid'
@@ -124,16 +126,18 @@ def main() -> int:
     existing = workbench_state(url)
     expected_pack = None
     if pack:
-        manifest = json.loads((pack / 'manifest.json').read_text(encoding='utf-8'))
-        expected_pack = (manifest.get('id'), manifest.get('version'))
+        manifest = validate_manifest(pack)
+        expected_pack = (manifest.get('id'), manifest.get('version'), str(pack.resolve()), pack_fingerprint(pack, manifest))
     actual_pack = ((existing or {}).get('brand_pack') or {})
-    pack_matches = not expected_pack or (actual_pack.get('id'), actual_pack.get('version')) == expected_pack
-    if existing and pack_matches:
+    actual_identity = (actual_pack.get('id'), actual_pack.get('version'), actual_pack.get('root'), actual_pack.get('content_fingerprint')) if actual_pack.get('id') else None
+    pack_matches = actual_identity == expected_pack
+    project_matches = bool(existing and Path(existing.get('workspace', '')).resolve() == workspace.resolve())
+    if existing and pack_matches and project_matches:
         receipt = {'url': url + '/', 'port': args.port, 'pid': pid, 'reused': True,
                    'project_root': str(project), 'brand_pack': str(pack) if pack else None}
         print(json.dumps(receipt, ensure_ascii=False))
         return 0
-    if existing and pid:
+    if existing and pid and project_matches:
         stop_process(pid)
     if port_is_open('127.0.0.1', args.port):
         raise RuntimeError(f'端口 {args.port} 已被其他服务占用，未覆盖现有进程')

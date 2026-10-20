@@ -6,18 +6,18 @@ import json
 from pathlib import Path
 import sys
 import urllib.request
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageColor, ImageDraw, ImageFont, ImageOps
 from fontTools.ttLib import TTFont
 from template_parameters import content_value, image_box, load_template, resolve_template, text_box
-from project_assets import canvas_size, save_project
+from project_assets import canvas_size, catalog_asset, save_project
+from organization_assets import asset_path, read_catalog
 
-ROOT = Path(__file__).resolve().parents[1]
 SIZE = (1600, 900)
 TEXT_KEYS = {'title', 'subtitle', 'eyebrow', 'footer'}
 ASSET_KEYS = {'image', 'logo', 'partner_logo', 'separator'}
 PALETTES = {
-    'dark': {'title': '#F6F7FA', 'body': '#B9BDC5', 'accent': '#FF7A1A'},
-    'light': {'title': '#122337', 'body': '#556476', 'accent': '#B84D00'},
+    'dark': {'title': '#F6F7FA', 'body': '#B9BDC5', 'accent': '#D2D6DC'},
+    'light': {'title': '#122337', 'body': '#556476', 'accent': '#586574'},
 }
 DEFAULT_FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
 FONT_CANDIDATES = [
@@ -32,9 +32,26 @@ FONT_CANDIDATES = [
 
 
 
+def resolve_palette(config, defaults):
+    """Snapshot explicit template and content colors over neutral rendering defaults."""
+    palette = dict(defaults)
+    for supplied in (config.get('template', {}).get('palette', {}), config.get('palette', {})):
+        if not isinstance(supplied, dict):
+            raise ValueError('palette must be an object of color roles')
+        if config.get('theme') in supplied:
+            supplied = supplied[config['theme']]
+        if not isinstance(supplied, dict):
+            raise ValueError('Theme palette must be an object of color roles')
+        palette.update(supplied)
+    for color in palette.values():
+        ImageColor.getrgb(color)
+    config['palette'] = palette
+    return palette
+
+
 def read_bytes(source, base):
     if str(source).startswith('https://'):
-        request = urllib.request.Request(str(source), headers={'User-Agent': 'BlockSecCover/1.0'})
+        request = urllib.request.Request(str(source), headers={'User-Agent': 'CoverRenderer/1.0'})
         with urllib.request.urlopen(request, timeout=20) as response:
             if not response.url.startswith('https://'):
                 raise ValueError('Asset redirected outside HTTPS')
@@ -154,7 +171,8 @@ def main():
     c = json.loads(src.read_text(encoding='utf-8'))
     size = canvas_size(c, SIZE)
     base = src.parent
-    template_defaults = c.get('template') or load_template(c['layout'])
+    template_defaults = c['template'] if 'template' in c else load_template(c['layout'], c, base)
+    c['template'] = template_defaults
     if template_defaults.get('default_background_id'):
         c.setdefault('background_id', template_defaults['default_background_id'])
     previous_theme = c.get('theme', template_defaults.get('default_theme', 'dark'))
@@ -165,7 +183,6 @@ def main():
         # Switching themes selects the paired preset; custom background needs an explicit replacement.
         c.pop('background', None)
         print('Theme changed: selecting paired preset unless --background is provided', file=sys.stderr)
-    palette = PALETTES[c['theme']]
     for assignment in args.set:
         key, val = assignment.split('=', 1)
         if key not in TEXT_KEYS:
@@ -176,7 +193,8 @@ def main():
         if key not in ASSET_KEYS:
             raise ValueError('--asset only supports image/logo/partner_logo/separator')
         c[key] = str(Path(val).resolve()) if val and not val.startswith('https://') else (val or None)
-    layers = resolve_template(c, c['layout'], size, args.layer, args.reset_layer)
+    layers = resolve_template(c, c['layout'], size, args.layer, args.reset_layer, start=base)
+    palette = resolve_palette(c, PALETTES[c['theme']])
     if 'main-title' in layers and (not isinstance(c.get('title'), str) or not c['title'].strip()):
         raise ValueError('title must be a non-empty string')
     for key in TEXT_KEYS:
@@ -189,7 +207,7 @@ def main():
             raise ValueError('This partnership template requires both official logos; missing: ' + key)
     for layer in layers.values():
         if layer['type'] == 'image' and layer.get('default_asset') and not c.get(layer['asset_field']):
-            c[layer['asset_field']] = str(ROOT / 'assets' / layer['default_asset'])
+            c[layer['asset_field']] = str(asset_path(layer['default_asset'], c, base))
     if c['layout'].startswith('partnership') and c.get('image'):
         raise ValueError('partnership has no image slot; choose hero/quote or remove image')
     if args.background:
@@ -198,21 +216,15 @@ def main():
     elif c.get('background'):
         source = c['background']
     else:
-        manifest = json.loads((ROOT / 'assets/backgrounds.json').read_text())
-        preset = manifest['presets'][c['background_id']]
+        manifest = read_catalog('backgrounds', c, base)
+        preset = manifest['presets'].get(c.get('background_id'))
+        if not preset:
+            raise ValueError('Choose a background file or a valid organization background_id')
         if preset.get('theme') and preset['theme'] != c['theme']:
             raise ValueError('This background preset only supports ' + preset['theme'] + '; provide --background for another theme')
         if c['theme'] == 'light' and 'themes' in preset:
             preset = preset['themes']['light']
-        source = str(ROOT / 'assets' / preset['file'])
-        if preset.get('public_url'):
-            try:
-                source = read_bytes(preset['public_url'], ROOT)
-                with Image.open(io.BytesIO(source)) as remote:
-                    remote.verify()
-            except Exception as exc:
-                print('Preset URL unavailable; using bundled background: ' + str(exc), file=sys.stderr)
-                source = str(ROOT / 'assets' / preset['file'])
+        source = str(catalog_asset(preset['file'], 'backgrounds', c, base))
     data = source if isinstance(source, bytes) else read_bytes(source, base)
     with Image.open(io.BytesIO(data)) as im:
         if abs(im.width / im.height / (size[0] / size[1]) - 1) > .02:
@@ -243,11 +255,11 @@ def main():
             image_data[key] = buf.getvalue()
     if 'image' in images:
         place_layer(canvas, images['image'], layers['main-image'])
-    for layer_id in ('blocksec-logo', 'partner-logo'):
-        layer = layers[layer_id]
-        if layer['asset_field'] in images:
+    for layer_id in ('brand-logo', 'partner-logo'):
+        layer = layers.get(layer_id)
+        if layer is not None and layer['asset_field'] in images:
             place_layer(canvas, images[layer['asset_field']], layer)
-    if 'logo' in images and 'partner_logo' in images:
+    if 'logo' in images and 'partner_logo' in images and 'partnership-separator' in layers:
         layer = layers['partnership-separator']
         if layer['type'] == 'image':
             place_layer(canvas, images[layer['asset_field']], layer)
@@ -271,7 +283,7 @@ def main():
     c['size'] = list(size)
     final = clean_background.copy()
     final.alpha_composite(canvas)
-    save_project(project, c, clean_background, final, 'render_cover.py', 'cover.png', foreground=canvas)
+    save_project(project, c, clean_background, final, 'render_cover.py', 'cover.png', foreground=canvas, start=base)
     print(json.dumps({'png': str(project / 'cover.png'), 'config': str(project / 'content.json')}, ensure_ascii=False))
 
 

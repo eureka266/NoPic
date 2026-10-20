@@ -1,9 +1,7 @@
 interface:
   display_name: "有图 NoPic"
   short_description: "在 Codex 侧边工作台制作可编辑社交封面"
-  default_prompt: "使用 $blocksec-social-cover 制作这个主题的配图，在 Codex 侧边打开 NoPic 工作台，结合我提供的参考图和正式素材完成可编辑封面。"
-  icon_small: assets/icon.svg
-  icon_large: assets/icon.svg
+  default_prompt: "使用 $nopic 制作这个主题的配图，在 Codex 侧边打开 NoPic 工作台，结合我提供的参考图和正式素材完成可编辑封面。"
 policy:
   products:
   - chatgpt

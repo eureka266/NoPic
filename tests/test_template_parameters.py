@@ -1,4 +1,4 @@
-"""Behavioral checks for portable templates and preserving local geometry edits."""
+"""Portable template behavior using only test-only generated swatches and geometry."""
 import json
 import shutil
 from pathlib import Path
@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from PIL import Image, ImageDraw
+from synthetic_pack import (activate_pack, disconnected_env, disconnected_pack, BACKGROUND_ID, ALTERNATE_BACKGROUND_ID)
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -16,6 +17,11 @@ from render_speaker_quote import choose_speaker_font
 
 
 class TemplateSnapshotTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='nopic-template-snapshot-')
+        self.addCleanup(self.temp.cleanup)
+        self.pack = activate_pack(self, self.temp.name)
+
     def test_saved_defaults_work_without_the_template_library(self):
         config = {'layout': 'hero'}
         before = templates.resolve_template(config, 'hero', (1600, 900))
@@ -70,20 +76,17 @@ class TemplateSnapshotTests(unittest.TestCase):
 
 
 class RenderPersistenceTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.temp = tempfile.TemporaryDirectory(prefix='blocksec-template-tests-')
-        cls.directory = Path(cls.temp.name)
-        cls.font = choose_speaker_font('Approved quote “ 中文标题')
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='nopic-template-tests-')
+        self.addCleanup(self.temp.cleanup)
+        self.directory = Path(self.temp.name)
+        self.pack = activate_pack(self, self.directory)
+        self.font = choose_speaker_font('Approved quote “ 中文标题')
         for name, size in [('landscape', (1600, 900)), ('portrait-background', (1200, 1600))]:
-            Image.new('RGB', size, '#101923').save(cls.directory / (name+'.png'))
+            Image.new('RGB', size, '#101923').save(self.directory / (name+'.png'))
         subject = Image.new('RGBA', (500, 900), (0, 0, 0, 0))
         ImageDraw.Draw(subject).rectangle((30, 30, 470, 870), fill='#C45DCC')
-        subject.save(cls.directory / 'subject.png')
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.temp.cleanup()
+        subject.save(self.directory / 'subject.png')
 
     def render(self, script, project, flags=(), source=None, success=True):
         command = [sys.executable, str(ROOT/'scripts'/script), '--project', str(project), *flags]
@@ -118,8 +121,8 @@ class RenderPersistenceTests(unittest.TestCase):
                     ['--layer', 'partner-logo.x=880'], source)
         saved = json.loads((project/'content.json').read_text())
         self.assertEqual(saved['theme'], 'light')
-        self.assertEqual(saved['background_id'], 'partnership-soft-grid')
-        self.assertEqual(saved['template_id'], 'partnership-announcement-minimal')
+        self.assertEqual(saved['background_id'], BACKGROUND_ID)
+        self.assertEqual(saved['template_id'], 'partnership-minimal-test')
         self.assertTrue((project/saved['separator']).is_file())
         self.assertEqual(saved['template']['layers']['partner-logo']['x'], 920)
         with Image.open(project/'cover.png') as image:
@@ -135,8 +138,9 @@ class RenderPersistenceTests(unittest.TestCase):
         # Project must remain renderable after being separated from bundled defaults/assets.
         detached = self.directory/'minimal-detached-scripts'
         shutil.copytree(project/'runtime', detached)
-        result = subprocess.run([sys.executable, str(detached/'render_cover.py'),
-                                 '--project', str(project)], capture_output=True, text=True)
+        with disconnected_pack(self.pack):
+            result = subprocess.run([sys.executable, str(detached/'render_cover.py'),
+                                     '--project', str(project)], capture_output=True, text=True, env=disconnected_env())
         self.assertEqual(result.returncode, 0, result.stderr)
         original_config = (project/'content.json').read_bytes()
         original_png = (project/'cover.png').read_bytes()
@@ -153,14 +157,15 @@ class RenderPersistenceTests(unittest.TestCase):
         partner = self.directory/'orange-partner.png'
         Image.new('RGBA', (500, 140), '#122337').save(logo)
         Image.new('RGBA', (500, 140), '#FF7A1A').save(partner)
-        source = dict(layout='partnership-minimal', background_id='partnership-orange-grid',
-                      style_variant='warm-orange-grid', logo=str(logo), partner_logo=str(partner))
+        source = dict(layout='partnership-minimal', background_id=ALTERNATE_BACKGROUND_ID,
+                      style_variant='test-warm', logo=str(logo), partner_logo=str(partner))
         self.render('render_cover.py', project, source=source)
         saved = json.loads((project/'content.json').read_text())
-        self.assertEqual(saved['background_id'], 'partnership-orange-grid')
+        self.assertEqual(saved['background_id'], ALTERNATE_BACKGROUND_ID)
         with Image.open(project/'cover.png') as image:
             self.assertEqual(image.size, (1600, 900))
-            self.assertGreater(image.getpixel((1500, 80))[0], image.getpixel((800, 450))[0])
+            self.assertEqual(image.getpixel((1500, 80)), (240, 176, 96))
+            self.assertNotEqual(image.getpixel((1500, 80)), (16, 25, 35))
 
     def test_minimal_partnership_missing_or_empty_logo_cannot_create_final_cover(self):
         for label, source in (
@@ -221,14 +226,15 @@ class RenderPersistenceTests(unittest.TestCase):
         self.render('render_speaker_quote.py', project, ['--draft'], source)
         saved = json.loads((project/'content.json').read_text())
         self.assertEqual(saved['schema_version'], 2)
-        self.assertEqual(saved['template_id'], 'seminar-summary-portrait')
+        self.assertEqual(saved['template_id'], 'seminar-summary-test')
         self.assertEqual(len({s['id'] for s in saved['sections']}), 2)
         self.assertIn(saved['sections'][0]['id']+'-body', saved['template']['layers'])
         detached = self.directory/'detached-scripts'
         shutil.copytree(project/'runtime', detached)
-        result = subprocess.run([sys.executable, str(detached/'render_speaker_quote.py'),
-                                 '--project', str(project), '--draft', '--set', 'title=Revised summary'],
-                                capture_output=True, text=True)
+        with disconnected_pack(self.pack):
+            result = subprocess.run([sys.executable, str(detached/'render_speaker_quote.py'),
+                                     '--project', str(project), '--draft', '--set', 'title=Revised summary'],
+                                    capture_output=True, text=True, env=disconnected_env())
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads((project/'content.json').read_text())['template'], saved['template'])
 

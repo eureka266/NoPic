@@ -5,6 +5,7 @@ from copy import deepcopy
 import hashlib
 import json
 import mimetypes
+import os
 import subprocess
 import sys
 import threading
@@ -24,24 +25,21 @@ WORK = HERE / 'workspace'
 WORK.mkdir(exist_ok=True)
 STATE = WORK / 'workbench-state.json'
 LOCK = threading.Lock()
-DEFAULT_BG = {
-    'soft': ROOT / 'assets/backgrounds/partnership-soft-grid-light.png',
-    'orange': ROOT / 'assets/backgrounds/partnership-orange-grid-light.png',
-    'radial': ROOT / 'assets/backgrounds/radial-grid-symmetric-light.png',
-}
-BG = dict(DEFAULT_BG)
-BRAND_PLACEHOLDER = HERE / 'demo-assets/brand-placeholder.png'
-PARTNER_PLACEHOLDER = HERE / 'demo-assets/partner-placeholder.png'
+sys.path.insert(0, str(ROOT / 'scripts'))
+from install_brand_pack import validate_manifest, pack_fingerprint
+
+BG = {}
+TEMPLATES = {}
 BRAND_PACK_ROOT = None
 BRAND_PACK_MANIFEST = None
-PREVIEW_REVISION = 'nopic-generic-partner-v2'
-KB = Path.home() / 'blocksec-product-knowledge'
+PREVIEW_REVISION = 'nopic-external-assets-v3'
+KB = None
 CATEGORIES = {'brand': 'materials/brand', 'layout-reference': 'materials/references/layout',
               'background-reference': 'materials/references/background',
               'background': 'backgrounds', 'static': 'materials/existing-static',
               'other': 'materials/other'}
-DEFAULT = {'mode': 'cover', 'background': 'soft', 'template': 'minimal',
-           'title': 'Partnership Announcement', 'subtitle': 'Approved copy goes here.',
+DEFAULT = {'mode': 'cover', 'background': None, 'template': None,
+           'title': '', 'subtitle': '',
            'format': 'png', 'duration': 5, 'uploads': [], 'revision': 0,
            'finalized': False, 'preview': None, 'render_key': None,
            'session_handoff': None, 'logo_id': None, 'partner_logo_id': None}
@@ -71,63 +69,48 @@ def pack_file(relative):
 
 
 def configure_brand_pack(pack_root=None):
-    global BG, BRAND_PLACEHOLDER, PARTNER_PLACEHOLDER
-    global BRAND_PACK_ROOT, BRAND_PACK_MANIFEST
-    BG = dict(DEFAULT_BG)
-    BRAND_PLACEHOLDER = HERE / 'demo-assets/brand-placeholder.png'
-    PARTNER_PLACEHOLDER = HERE / 'demo-assets/partner-placeholder.png'
-    BRAND_PACK_ROOT = None
-    BRAND_PACK_MANIFEST = None
-    DEFAULT['background'] = 'soft'
-    DEFAULT['logo_id'] = None
-    DEFAULT['partner_logo_id'] = None
+    global BG, TEMPLATES, BRAND_PACK_ROOT, BRAND_PACK_MANIFEST
+    BG, TEMPLATES = {}, {}
+    BRAND_PACK_ROOT = BRAND_PACK_MANIFEST = None
+    for key in ('background', 'template', 'logo_id', 'partner_logo_id'):
+        DEFAULT[key] = None
     if not pack_root:
         return
     root = Path(pack_root).expanduser().resolve()
-    manifest_file = root / 'manifest.json'
-    if not root.is_dir() or not manifest_file.is_file():
-        raise ValueError(f'Brand pack not found: {root}')
-    manifest = json.loads(manifest_file.read_text(encoding='utf-8'))
-    if manifest.get('schema_version') != 1 or not manifest.get('id'):
-        raise ValueError('Unsupported brand pack manifest')
-    backgrounds = {}
-    logos = {}
+    manifest = validate_manifest(root)
+    backgrounds, logos = {}, {}
+    def file(relative):
+        path = (root / relative).resolve()
+        if not path.is_relative_to(root) or not path.is_file():
+            raise ValueError('Organization resource is missing or outside the pack')
+        return path
     for entry in manifest.get('backgrounds', []):
-        if entry.get('reference_only') or entry.get('usable_as_background') is False:
-            continue
-        asset_id = entry.get('id')
-        if not asset_id:
-            continue
-        backgrounds[asset_id] = (root / entry['file']).resolve()
-        if not backgrounds[asset_id].is_file() or not backgrounds[asset_id].is_relative_to(root):
-            raise ValueError(f'Brand pack background is missing: {entry.get("file")}')
+        if not entry.get('reference_only') and entry.get('usable_as_background') is not False:
+            backgrounds[entry['id']] = file(entry['file'])
     for entry in manifest.get('logos', []):
-        if entry.get('reference_only') or entry.get('usable_as_standalone_logo') is False:
-            continue
-        asset_id = entry.get('id')
-        if not asset_id:
-            continue
-        render_file = entry.get('render_file') or entry.get('file')
-        path = (root / render_file).resolve()
-        if not path.is_file() or not path.is_relative_to(root):
-            raise ValueError(f'Brand pack logo is missing: {render_file}')
-        logos[asset_id] = {'entry': entry, 'path': path}
-    if not backgrounds:
-        raise ValueError('Brand pack must contain at least one usable background')
+        if not entry.get('reference_only') and entry.get('usable_as_standalone_logo') is not False:
+            logos[entry['id']] = {'entry': entry, 'path': file(entry.get('render_file') or entry['file'])}
+    templates = {}
+    if manifest.get('catalogs', {}).get('templates'):
+        index = file(manifest['catalogs']['templates'])
+        for entry in json.loads(index.read_text(encoding='utf-8'))['templates']:
+            path = (index.parent / entry['file']).resolve()
+            if not path.is_relative_to(root) or not path.is_file():
+                raise ValueError('Template is missing or outside the organization pack')
+            template = json.loads(path.read_text(encoding='utf-8'))
+            templates[entry['id']] = {**entry, 'template': template}
     defaults = manifest.get('defaults', {})
-    default_background = defaults.get('background') if defaults.get('background') in backgrounds else next(iter(backgrounds))
+    default_background = defaults.get('background') if defaults.get('background') in backgrounds else next(iter(backgrounds), None)
+    default_template = defaults.get('template') if defaults.get('template') in templates else next(iter(templates), None)
     default_logo = defaults.get('logo') if defaults.get('logo') in logos else next(iter(logos), None)
     partner_logo = defaults.get('partner_logo') if defaults.get('partner_logo') in logos else None
-    BG = backgrounds
-    BRAND_PACK_ROOT = root
+    BG, TEMPLATES, BRAND_PACK_ROOT = backgrounds, templates, root
     BRAND_PACK_MANIFEST = {'manifest': manifest, 'backgrounds': backgrounds, 'logos': logos,
-                           'default_background': default_background, 'default_logo': default_logo,
-                           'partner_logo': partner_logo}
-    DEFAULT['background'] = default_background
-    DEFAULT['logo_id'] = default_logo
-    DEFAULT['partner_logo_id'] = partner_logo
-    BRAND_PLACEHOLDER = logos[default_logo]['path'] if default_logo else BRAND_PLACEHOLDER
-    PARTNER_PLACEHOLDER = logos[partner_logo]['path'] if partner_logo else PARTNER_PLACEHOLDER
+                          'templates': templates, 'default_background': default_background,
+                          'default_template': default_template, 'default_logo': default_logo,
+                          'partner_logo': partner_logo, 'content_fingerprint': pack_fingerprint(root, manifest)}
+    DEFAULT.update(background=default_background, template=default_template,
+                   logo_id=default_logo, partner_logo_id=partner_logo)
 
 
 def brand_pack_view():
@@ -153,29 +136,41 @@ def brand_pack_view():
                       'brand': entry.get('brand'), 'url': '/brand-pack/' + quote(relative.as_posix(), safe='/')})
     return {'id': manifest['id'], 'version': manifest.get('version'),
             'display_name': manifest.get('display_name') or manifest['id'],
-            'root': str(BRAND_PACK_ROOT), 'default_background': BRAND_PACK_MANIFEST['default_background'],
+            'root': str(BRAND_PACK_ROOT), 'content_fingerprint': BRAND_PACK_MANIFEST['content_fingerprint'], 'default_background': BRAND_PACK_MANIFEST['default_background'],
             'default_logo': BRAND_PACK_MANIFEST['default_logo'],
             'partner_logo': BRAND_PACK_MANIFEST['partner_logo'],
-            'backgrounds': backgrounds, 'logos': logos}
+            'backgrounds': backgrounds, 'logos': logos,
+            'templates': [{'id': key, 'name': value.get('display_name', key),
+                           'layout': value['template']['legacy_layout'],
+                           'canvas': value['template']['canvas'],
+                           'has_text': any(layer.get('type') == 'text' for layer in value['template']['layers'].values())}
+                          for key, value in TEMPLATES.items()]}
 
 
 def read_state():
     state = {**deepcopy(DEFAULT), **(json.loads(STATE.read_text()) if STATE.exists() else {})}
-    if BRAND_PACK_MANIFEST:
-        if state['background'] not in BG:
-            state['background'] = DEFAULT['background']
-        logo_ids = set(BRAND_PACK_MANIFEST['logos'])
-        if state.get('logo_id') not in logo_ids:
-            state['logo_id'] = DEFAULT['logo_id']
-        if state.get('partner_logo_id') not in logo_ids:
-            state['partner_logo_id'] = DEFAULT['partner_logo_id']
+    # JSON persists tuples as lists; normalize the comparison.
+    identity = [BRAND_PACK_MANIFEST['manifest']['id'], BRAND_PACK_MANIFEST['manifest']['version'],
+                str(BRAND_PACK_ROOT), BRAND_PACK_MANIFEST['content_fingerprint']] if BRAND_PACK_MANIFEST else None
+    changed_pack = state.get('pack_identity') != identity
+    for field, options in (('background', BG), ('template', TEMPLATES)):
+        if state.get(field) not in options:
+            state[field] = DEFAULT[field]
+    logo_ids = set(BRAND_PACK_MANIFEST['logos']) if BRAND_PACK_MANIFEST else set()
+    for field in ('logo_id', 'partner_logo_id'):
+        if state.get(field) not in logo_ids:
+            state[field] = DEFAULT[field]
+    if changed_pack or not BRAND_PACK_MANIFEST:
+        state.update(preview=None, render_key=None, current_project=None, finalized=False)
+        state.pop('submission', None)
+    state['pack_identity'] = identity
     return state
 
 
 def resolve_logo(asset_id, fallback):
     if BRAND_PACK_MANIFEST and asset_id in BRAND_PACK_MANIFEST['logos']:
         return BRAND_PACK_MANIFEST['logos'][asset_id]['path']
-    return fallback
+    return None
 
 
 def write_json(path, value):
@@ -203,8 +198,8 @@ def pack_inside(relative):
 
 def state_view():
     state = read_state()
-    return {**state, 'workspace': str(WORK), 'knowledge_root': str(KB),
-            'knowledge_available': (KB / 'assets/video').is_dir(),
+    return {**state, 'workspace': str(WORK), 'knowledge_root': str(KB) if KB else None,
+            'knowledge_available': bool(KB and (KB / 'assets/video').is_dir()),
             'timezone': 'Asia/Hong_Kong', 'brand_pack': brand_pack_view()}
 
 
@@ -216,11 +211,13 @@ def update_draft(data):
             state[key] = data[key]
     if state['mode'] not in ('cover', 'background', 'motion'):
         raise ValueError('Unknown workflow')
-    if state['background'] not in BG or state['template'] not in ('minimal', 'centered'):
-        raise ValueError('Unknown preset')
+    if state.get('background') is not None and state['background'] not in BG:
+        raise ValueError('Unknown organization background')
+    if state.get('template') is not None and state['template'] not in TEMPLATES:
+        raise ValueError('Unknown organization template')
     if BRAND_PACK_MANIFEST:
         logo_ids = set(BRAND_PACK_MANIFEST['logos'])
-        if state.get('logo_id') not in logo_ids or (state.get('partner_logo_id') and state['partner_logo_id'] not in logo_ids):
+        if (state.get('logo_id') and state['logo_id'] not in logo_ids) or (state.get('partner_logo_id') and state['partner_logo_id'] not in logo_ids):
             raise ValueError('Unknown brand pack logo')
     if state['format'] not in ('png', 'webp'):
         raise ValueError('PNG or WebP only in this prototype')
@@ -284,12 +281,15 @@ def render(data):
     state = update_draft(data)
     if state['mode'] == 'motion':
         return state_view()
+    if not BRAND_PACK_MANIFEST or state.get('background') not in BG:
+        raise ValueError('Load an organization asset pack with a usable background before rendering')
+    if state['mode'] != 'background' and state.get('template') not in TEMPLATES:
+        raise ValueError('Select a template from the organization asset pack before rendering')
     key_data = {k: state[k] for k in ('mode', 'background', 'template', 'title', 'subtitle',
                                       'logo_id', 'partner_logo_id')}
     key_data['preview_revision'] = PREVIEW_REVISION
     if BRAND_PACK_MANIFEST:
-        key_data['brand_pack'] = (BRAND_PACK_MANIFEST['manifest']['id'],
-                                  BRAND_PACK_MANIFEST['manifest'].get('version'))
+        key_data['brand_pack'] = state['pack_identity']
     key = hashlib.sha256(json.dumps(key_data, sort_keys=True).encode()).hexdigest()[:16]
     project = WORK / 'projects/partnership-demo/versions' / key
     if project.exists() and not (project / 'project.json').exists():
@@ -301,23 +301,33 @@ def render(data):
                        '--project', str(project), '--background', str(BG[state['background']]), '--confirm-clean']
         else:
             project.mkdir(parents=True, exist_ok=True)
-            content = {'layout': 'partnership-minimal' if state['template'] == 'minimal' else 'partnership-centered',
-                       'theme': 'light', 'background': str(BG[state['background']]),
-                       'background_id': state['background'],
-                       'logo': str(resolve_logo(state.get('logo_id'), BRAND_PLACEHOLDER)),
-                       'partner_logo': str(resolve_logo(state.get('partner_logo_id'), PARTNER_PLACEHOLDER)),
-                       'title': state['title'] if state['template'] == 'centered' else '',
-                       'subtitle': state['subtitle'] if state['template'] == 'centered' else '',
+            selected = TEMPLATES[state['template']]['template']
+            fields = {field for layer in selected['layers'].values()
+                      for field in ([layer.get('content_field')] if isinstance(layer.get('content_field'), str) else layer.get('content_field', []))}
+            content = {'layout': selected['legacy_layout'], 'template': selected,
+                       'template_id': selected['id'], 'size': [selected['canvas']['width'], selected['canvas']['height']],
+                       'brand_pack': str(BRAND_PACK_ROOT), 'theme': selected.get('default_theme', 'light'),
+                       'background': str(BG[state['background']]), 'background_id': state['background'],
+                       'logo': str(resolve_logo(state.get('logo_id'), None)) if state.get('logo_id') else None,
+                       'partner_logo': str(resolve_logo(state.get('partner_logo_id'), None)) if state.get('partner_logo_id') else None,
+                       'title': state['title'] if 'title' in fields else '',
+                       'subtitle': state['subtitle'] if 'subtitle' in fields else '',
                        'eyebrow': '', 'footer': ''}
+            if 'quote' in fields:
+                content['quote'] = state['title']
+            if 'quote_body' in fields:
+                content['quote_body'] = state['subtitle']
             if any('\u3400' <= char <= '\u9fff' for char in content['title'] + content['subtitle']):
                 chinese_font = Path('/System/Library/Fonts/Hiragino Sans GB.ttc')
                 if chinese_font.is_file():
                     content['font'] = content['font_bold'] = str(chinese_font)
             input_file = project / 'input.json'
             write_json(input_file, content)
-            command = [sys.executable, str(ROOT / 'scripts/render_cover.py'), '--content',
+            script = 'render_speaker_quote.py' if selected['legacy_layout'] in ('speaker-quote', 'seminar-summary') else 'render_cover.py'
+            command = [sys.executable, str(ROOT / 'scripts' / script), '--content',
                        str(input_file), '--project', str(project)]
-        result = subprocess.run(command, capture_output=True, text=True, timeout=60)
+        result = subprocess.run(command, capture_output=True, text=True, timeout=60,
+                                env={**os.environ, 'NOPIC_BRAND_PACK': str(BRAND_PACK_ROOT)})
         if result.returncode:
             raise ValueError(result.stderr.strip()[-1200:] or 'Render failed')
     manifest = json.loads((project / 'project.json').read_text())
@@ -388,7 +398,7 @@ class Handler(BaseHTTPRequestHandler):
                 file = pack_inside(path.removeprefix('/brand-pack/'))
             elif path.startswith('/workspace/'):
                 file = inside(path.removeprefix('/workspace/'))
-            elif path in ('/', '/index.html', '/app.js', '/style.css', '/demo-assets.json'):
+            elif path in ('/', '/index.html', '/app.js', '/style.css'):
                 file = HERE / ('index.html' if path == '/' else path[1:])
             else:
                 return self.send_data({'error': 'Not found'}, status=404)
@@ -529,7 +539,7 @@ class Handler(BaseHTTPRequestHandler):
                         for file in files:
                             z.write(file, 'project/' + str(file.relative_to(project)))
                     manifest = {'revision': revision, 'finalized_at': now(),
-                                'target': 'assets/video/' + now()[:10] + '-partnership-demo',
+                                'target': 'exports/' + now()[:10] + '-project',
                                 'files': [str(p.relative_to(project)) for p in files],
                                 'package': str(package.relative_to(WORK)),
                                 'reference_uploads_included': False, 'git_committed': False, 'pushed': False}

@@ -1,8 +1,6 @@
 const $ = (id) => document.getElementById(id);
-const demo = JSON.parse($('demo-data').textContent);
-const names = {soft:'浅色柔光网格',orange:'暖橙渐变网格',radial:'对称径向网格'};
 const categories = {brand:'品牌素材', 'layout-reference':'总体参考', 'background-reference':'底图参考',background:'可用底图',static:'已有静图',other:'其他素材'};
-let state = {mode:'cover',background:'soft',template:'minimal',title:'Partnership Announcement',subtitle:'Approved copy goes here.',format:'png',duration:5,uploads:[],brand_pack:null,logo_id:null,partner_logo_id:null};
+let state = {mode:'cover',background:null,template:null,title:'',subtitle:'',format:'png',duration:5,uploads:[],brand_pack:null,logo_id:null,partner_logo_id:null};
 let online = false, timer, toastTimer, sequence = 0, renderChain = Promise.resolve();
 
 function toast(message, error = false) {
@@ -17,7 +15,7 @@ async function api(path, body) {
   return result;
 }
 function draft() {
-  return {mode:state.mode,background:state.background,template:$('template').value,title:$('title').value,subtitle:$('subtitle').value,format:$('format').value,duration:Number($('duration').value),logo_id:state.logo_id,partner_logo_id:state.partner_logo_id};
+  return {mode:state.mode,background:state.background,template:$('template').value || null,title:$('title').value,subtitle:$('subtitle').value,format:$('format').value,duration:Number($('duration').value),logo_id:state.logo_id,partner_logo_id:state.partner_logo_id};
 }
 function showTab(tab) {
   document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===tab)));
@@ -32,16 +30,15 @@ function syncMode() {
   showTab(state.mode==='background' ? 'backgrounds' : selected);
   $('preview-kind').textContent = motion ? '静态母版 · 动效待制作' : state.mode==='background' ? '无字底图' : '静态母版';
   $('preview-note').textContent = motion ? '已确认构图保持不变' : state.mode==='background' ? '无文字 · 无 Logo' : '独立底图 · Logo 分层保留';
-  $('export').disabled=motion;
+  $('export').disabled=motion || !state.preview;
   $('export').querySelector('span').textContent=motion?'待补充运动素材':'导出图片';
-  $('finalize').disabled=motion;
+  $('finalize').disabled=motion || !state.preview;
   if(motion) $('action-status').textContent='动效尚未制作 · 可先保存需求';
   else $('action-status').textContent='本地制作 · 素材不外传';
   $('finalization').hidden=!(state.finalized && state.dismissed_revision!==state.render_key) || motion;
 }
 function backgroundAssets() {
-  if(state.brand_pack?.backgrounds?.length) return state.brand_pack.backgrounds;
-  return Object.entries(demo.backgrounds).map(([id,url])=>({id,url,name:names[id]}));
+  return state.brand_pack?.backgrounds || [];
 }
 function rebuildBackgroundOptions() {
   $('background-options').replaceChildren();
@@ -56,7 +53,8 @@ function rebuildBackgroundOptions() {
 function syncBackgrounds() {
   const assets=backgroundAssets();
   const selected=assets.find(asset=>asset.id===state.background) || assets[0];
-  if(!selected)return;
+  if(!selected) {$('selected-bg-image').hidden=true;$('selected-bg-name').textContent='尚未选择底图';return;}
+  $('selected-bg-image').hidden=false;
   document.querySelectorAll('[data-background]').forEach(b=>b.classList.toggle('active',b.dataset.background===selected.id));
   $('selected-bg-image').src=selected.url;
   $('selected-bg-name').textContent=selected.name;
@@ -66,15 +64,31 @@ function syncBrandPack() {
   const logos=pack?.logos || [];
   const brand=logos.find(asset=>asset.id===state.logo_id) || logos[0];
   const partner=state.partner_logo_id ? logos.find(asset=>asset.id===state.partner_logo_id) : null;
-  $('brand-asset').src=brand?.url || demo.logo;
-  $('partner-asset').src=partner?.url || demo.partner;
-  $('brand-pack-name').textContent=pack ? `${pack.display_name} · ${pack.version || '未标版本'}` : '默认演示素材';
-  $('brand-pack-help').textContent=pack ? '已载入当前项目的品牌包，Logo 与底图来自包内清单。' : '当前使用演示素材；可通过 Codex 会话安装品牌包。';
+  for(const [id,asset] of [['brand-asset',brand],['partner-asset',partner]]) {
+    $(id).hidden=!asset;if(asset)$(id).src=asset.url;else $(id).removeAttribute('src');
+  }
+  $('brand-pack-name').textContent=pack ? `${pack.display_name} · ${pack.version || '未标版本'}` : '未加载组织素材包';
+  $('brand-pack-help').textContent=pack ? '已载入当前项目的品牌包，Logo 与底图来自包内清单。' : '通过当前会话安装组织素材包；当前没有默认组织素材。';
+}
+function rebuildTemplateOptions() {
+  const select=$('template');select.replaceChildren();
+  const templates=state.brand_pack?.templates || [];
+  if(!templates.length) {const option=document.createElement('option');option.value='';option.textContent='请加载含模板的组织素材包';select.append(option);}
+  for(const template of templates) {const option=document.createElement('option');option.value=template.id;option.textContent=template.name;select.append(option);}
+  select.value=state.template || '';
 }
 function syncTemplate() {
-  $('copy-fields').hidden=$('template').value==='minimal';
-  $('template-help').textContent=$('template').value==='minimal'?'只展示双方品牌，保持充足留白。':'在既有模板区域中排版，预览与导出共用合成器。';
+  const template=state.brand_pack?.templates?.find(item=>item.id===$('template').value);
+  $('copy-fields').hidden=!template?.has_text;
+  $('template-help').textContent=template ? '按组织模板的固定区域适配文案，保留项目快照。' : '模板和生产素材由组织包提供。';
+  if(template?.canvas)document.querySelector('.canvas-size').textContent=`${template.canvas.width} × ${template.canvas.height}`;
 }
+function syncPreview() {
+  const ready=Boolean(state.preview);
+  $('preview').hidden=!ready;$('empty-preview').hidden=ready;
+  if(ready)$('preview').src=state.preview;else $('preview').removeAttribute('src');
+}
+
 function savedText(value) { $('save-status').querySelector('span').textContent=value; }
 function updatePaths() {
   $('workspace-path').textContent=state.workspace || '请通过本地服务打开，启用真实文件保存';
@@ -101,7 +115,7 @@ function displayFiles() {
 function acceptResult(result) {
   Object.assign(state,result);
   if(result.preview && state.mode!=='motion') $('preview').src=result.preview;
-  displayFiles(); updatePaths(); syncMode();
+  syncPreview(); displayFiles(); updatePaths(); syncMode();
   savedText('已保存到本地');
 }
 function renderNow() {
@@ -109,6 +123,9 @@ function renderNow() {
   const snapshot=draft(), serial=++sequence;
   Object.assign(state,snapshot);
   if(!online) {toast('请启动本地服务后更新预览与保存文件。',true);return Promise.resolve();}
+  if(!state.brand_pack || !state.background || (state.mode!=='background' && !state.template)) {
+    return api('/api/draft',snapshot).then(result=>{acceptResult(result);savedText('已保存草稿');return result;});
+  }
   $('render-overlay').hidden=state.mode==='motion';
   savedText('更新中…');
   const task=renderChain.catch(()=>{}).then(()=>api('/api/render',snapshot));
@@ -126,10 +143,10 @@ function scheduleRender() {
   timer=setTimeout(()=>renderNow().catch(()=>{}),500);
 }
 function applyState() {
-  $('template').value=state.template; $('title').value=state.title;
+  rebuildTemplateOptions(); $('title').value=state.title;
   $('subtitle').value=state.subtitle; $('format').value=state.format;
   $('duration').value=state.duration; $('duration-label').textContent=state.duration+' 秒';
-  if(state.preview) $('preview').src=state.preview;
+  syncPreview();
   syncMode(); rebuildBackgroundOptions(); syncBackgrounds(); syncBrandPack(); syncTemplate(); updatePaths(); displayFiles();
 }
 async function uploadFiles(files) {
@@ -167,7 +184,8 @@ async function handoffSession() {
 async function finalize() {
   if(!online) return toast('请先启动本地服务。',true);
   try {
-    await renderNow();
+    if(state.brand_pack && state.background && (state.mode==='background' || state.template))await renderNow();
+    else savedText('等待组织素材包');
     acceptResult(await api('/api/finalize',{}));
     showFinalization();toast('已生成本地候选工程包，未提交知识库。');
     $('finalization').scrollIntoView({behavior:'smooth',block:'center'});
@@ -184,7 +202,7 @@ function showFinalization() {
   $('finalization').hidden=state.dismissed_revision===state.render_key;
 }
 
-$('preview').src=demo.cover;
+syncPreview();
 document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{
   state.mode=button.dataset.mode;syncMode();
   renderNow().catch(()=>{});
@@ -360,6 +378,7 @@ setupBackgroundWorkflow();
   try {
     state=await api('/api/state');online=true;applyState();restoreBackgroundWorkflow();
     if(state.submission)showFinalization();
-    await renderNow();
-  } catch(error) {savedText('离线外观预览');$('action-status').textContent='需启动服务才能保存与导出';toast('当前为外观预览。运行 server.py 可启用上传、合成和导出。',true);}
+    if(state.brand_pack && state.background && (state.mode==='background' || state.template))await renderNow();
+    else savedText('等待组织素材包');
+  } catch(error) {savedText('服务不可用');$('action-status').textContent='需启动服务才能保存与导出';toast('服务连接失败。请检查本地服务；组织素材不会自动加载。',true);}
 })();

@@ -2,15 +2,18 @@
 import base64
 from io import BytesIO
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from PIL import Image
+from synthetic_pack import make_pack
 
 WORKBENCH = Path(__file__).resolve().parents[1] / 'output/prototypes/cover-workbench'
 sys.path.insert(0, str(WORKBENCH))
@@ -36,7 +39,9 @@ class BackgroundWorkflowTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         server.configure_paths(self.directory.name)
         self.work = server.WORK
+        self.enterContext(patch.dict(os.environ, {'NOPIC_BRAND_PACK': ''}))
         server.configure_brand_pack()
+        self.addCleanup(server.configure_brand_pack)
 
     def api(self, path, data=None, status=200, origin=None):
         headers = {'Content-Type': 'application/json'}
@@ -172,6 +177,67 @@ class BackgroundWorkflowTests(unittest.TestCase):
         request = self.api('/api/request', dict(kind='motion', brief='慢慢动起来'))
         self.assertFalse(request['executed'])
         self.assertTrue(Path(request['path']).exists())
+
+
+    def test_pack_root_change_invalidates_preview_even_with_the_same_version(self):
+        first = make_pack(self.work.parent/'first-pack')
+        second = make_pack(self.work.parent/'second-pack')
+        server.configure_brand_pack(first)
+        before = self.api('/api/render', {'mode': 'background'})
+        self.assertTrue(before['preview'])
+        server.configure_brand_pack(second)
+        state = self.api('/api/state')
+        self.assertIsNone(state['preview'])
+        after = self.api('/api/render', {'mode': 'background'})
+        self.assertNotEqual(before['render_key'], after['render_key'])
+
+    def test_no_pack_has_no_implicit_background_template_or_preview(self):
+        state = self.api('/api/state')
+        self.assertIsNone(state['brand_pack'])
+        self.assertIsNone(state['background'])
+        self.assertIsNone(state['template'])
+        self.assertIsNone(state['preview'])
+        self.assertEqual(server.BG, {})
+        self.assertEqual(server.TEMPLATES, {})
+        result = self.api('/api/render', {}, status=400)
+        self.assertIn('error', result)
+        self.assertFalse((self.work/'projects').exists())
+        asset = self.upload('test-only-input.png')
+        receipt, task = self.task(reference_source='panel', reference_ids=[asset['id']])
+        self.assertEqual(task['references'][0]['id'], asset['id'])
+        self.assertTrue(receipt['id'])
+        self.api('/api/session-handoff', {'instruction': 'Test-only empty-state handoff'})
+
+    def test_empty_background_pack_still_allows_upload_and_handoff(self):
+        pack = make_pack(Path(self.directory.name)/'empty-test-pack', backgrounds=False)
+        server.configure_brand_pack(pack)
+        state = self.api('/api/state')
+        self.assertEqual(state['brand_pack']['id'], 'test-only-pack')
+        self.assertEqual(state['brand_pack']['backgrounds'], [])
+        self.assertIsNone(state['background'])
+        self.assertEqual(server.BG, {})
+        self.api('/api/render', {}, status=400)
+        self.assertFalse((self.work/'projects').exists())
+        asset = self.upload('test-only-reference.png')
+        _, task = self.task(reference_source='panel', reference_ids=[asset['id']])
+        self.assertEqual(task['references'][0]['id'], asset['id'])
+        self.api('/api/session-handoff', {'instruction': 'Test-only empty-pack handoff'})
+
+    def test_pack_state_uses_only_manifest_assets_and_catalog_templates(self):
+        pack = make_pack(Path(self.directory.name)/'loaded-test-pack')
+        server.configure_brand_pack(pack)
+        state = self.api('/api/state')
+        self.assertEqual(set(server.BG), {entry['id'] for entry in
+                                       json.loads((pack/'manifest.json').read_text())['backgrounds']})
+        self.assertIn(state['background'], server.BG)
+        self.assertIn(state['template'], server.TEMPLATES)
+        expected = {entry['id'] for entry in json.loads((pack/'templates/index.json').read_text())['templates']}
+        self.assertEqual(set(server.TEMPLATES), expected)
+        for file in server.BG.values():
+            self.assertTrue(file.is_relative_to(pack))
+        self.api('/api/render', {'mode': 'background'})
+        rendered = self.api('/api/state')
+        self.assertIsNotNone(rendered['preview'])
 
 
 if __name__ == '__main__':

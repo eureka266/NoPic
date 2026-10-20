@@ -5,6 +5,7 @@ Then: python -m playwright install chromium
 SCREENSHOT_URL=http://127.0.0.1:59054 python scripts/capture_screenshots.py
 """
 import os
+import tempfile
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
@@ -14,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     url = os.environ.get('SCREENSHOT_URL', 'http://127.0.0.1:59054/')
-    target = ROOT / 'docs/assets/workbench.jpg'
+    target = Path(os.environ.get('SCREENSHOT_OUTPUT') or str(Path(tempfile.mkdtemp(prefix='nopic-screenshot-')) / 'workbench.jpg'))
     target.parent.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
@@ -27,7 +28,7 @@ def main():
                 raise RuntimeError('Workbench did not return a successful page: ' + url)
             page.get_by_role('heading', name='本公司 × 合作方', exact=True).wait_for()
             page.evaluate('document.fonts.ready')
-            page.locator('img:visible').evaluate_all(
+            page.locator('img:visible[src]').evaluate_all(
                 '(images) => Promise.all(images.map(img => img.decode()))')
             page.screenshot(path=str(target), full_page=True, type='jpeg', quality=90,
                             animations='disabled')
