@@ -7,10 +7,11 @@ import io
 import json
 from pathlib import Path
 import sys
-from PIL import Image, ImageColor, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from template_parameters import content_value, resolve_template, text_box
-from render_cover import choose_font, materialize, place, place_layer, read_bytes, validate_glyphs
-from project_assets import canvas_size, save_project
+from render_cover import choose_font, materialize, place, place_layer, read_bytes, resolve_palette, validate_glyphs
+from project_assets import canvas_size, catalog_asset, save_project
+from organization_assets import asset_path, read_catalog
 
 def choose_speaker_font(text):
     try:
@@ -27,13 +28,12 @@ def choose_speaker_font(text):
         raise ValueError('No system font covers this copy; provide font/font_bold paths')
 
 
-ROOT = Path(__file__).resolve().parents[1]
 SIZE = (1200, 1600)
 TEXT_KEYS = {'quote', 'quote_body', 'speaker_name', 'speaker_role', 'organization',
              'event', 'event_date', 'title', 'footer'}
 ASSET_KEYS = {'portrait', 'logo', 'photo_original'}
 PALETTE = {'background': '#050609', 'text': '#F6F7FA', 'muted': '#B9BDC5',
-           'blue': '#248BCC', 'orange': '#FF7A1A'}
+           'blue': '#AAB4C2', 'orange': '#D2D6DC'}
 
 
 def cutout(raw):
@@ -146,12 +146,15 @@ def draw_text(canvas, value, box, path, color):
 def background(config, base, palette, size=SIZE):
     source = config.get('background')
     if not source:
-        manifest = json.loads((ROOT/'assets/backgrounds.json').read_text())
-        preset_id = config.get('background_id', manifest['portrait_presets']['default'])
-        preset = manifest['portrait_presets']['presets'].get(preset_id)
+        manifest = read_catalog('backgrounds', config, base)
+        defaults = manifest['portrait_presets']
+        default_key = 'default_summary' if config.get('layout') == 'seminar-summary' else 'default'
+        preset_id = config.get('background_id') or defaults.get(default_key, defaults.get('default'))
+        preset = defaults['presets'].get(preset_id)
         if not preset:
             raise ValueError('Unknown 3:4 background_id: '+str(preset_id))
-        source = str(ROOT/'assets'/preset['file'])
+        config['background_id'] = preset_id
+        source = str(catalog_asset(preset['file'], 'backgrounds', config, base))
     raw = read_bytes(source, base)
     with Image.open(io.BytesIO(raw)) as im:
         image = ImageOps.exif_transpose(im).convert('RGBA')
@@ -175,7 +178,7 @@ def main():
     parser.add_argument('--set', action='append', default=[])
     parser.add_argument('--asset', action='append', default=[])
     parser.add_argument('--background')
-    parser.add_argument('--background-id', help='Explicitly switch to another bundled 3:4 preset')
+    parser.add_argument('--background-id', help='Explicitly switch to another organization 3:4 preset')
     parser.add_argument('--draft', action='store_true', help='Allow missing logo, with explicit draft label')
     parser.add_argument('--cutout-only', action='store_true')
     parser.add_argument('--layer', action='append', default=[], help='LAYER_ID.PROPERTY=VALUE in design pixels')
@@ -201,7 +204,7 @@ def main():
     config = json.loads(src.read_text(encoding='utf-8'))
     size = canvas_size(config, SIZE)
     base = src.parent
-    layout = config.get('layout', 'speaker-quote')
+    layout = config.setdefault('layout', 'speaker-quote')
     if layout not in ('speaker-quote', 'seminar-summary'):
         raise ValueError('layout must be speaker-quote or seminar-summary')
     for assignment in args.set:
@@ -247,17 +250,15 @@ def main():
                 raise ValueError('Section heading must be a string')
         if config.get('portrait'):
             raise ValueError('seminar-summary has no portrait slot; use speaker-quote for a guest portrait')
+    layers = resolve_template(config, layout, size, args.layer, args.reset_layer, start=base)
+    for layer in layers.values():
+        if layer['type'] == 'image' and layer.get('default_asset') and not config.get(layer['asset_field']):
+            config[layer['asset_field']] = str(asset_path(layer['default_asset'], config, base))
     if not config.get('logo') and not args.draft:
-        raise ValueError('Provide an official BlockSec logo from assets/logos, or use --draft for a marked preview')
-    layers = resolve_template(config, layout, size, args.layer, args.reset_layer)
-    palette = {**PALETTE, **config.get('palette', {})}
-    for color in palette.values():
-        ImageColor.getrgb(color)
-    config['palette'] = palette
-    if not config.get('background'):
-        portrait_defaults = json.loads((ROOT/'assets/backgrounds.json').read_text())['portrait_presets']
-        default_key = 'default_summary' if layout == 'seminar-summary' else 'default'
-        config.setdefault('background_id', portrait_defaults.get(default_key, portrait_defaults['default']))
+        raise ValueError('Provide an approved organization logo, or use --draft for a marked preview')
+    palette = resolve_palette(config, PALETTE)
+    if not config.get('background') and config['template'].get('default_background_id'):
+        config.setdefault('background_id', config['template']['default_background_id'])
     config.setdefault('background_fit', 'contain')
     canvas, background_raw = background(config, base, palette, size)
     clean_background = canvas.copy()
@@ -308,7 +309,7 @@ def main():
                          config['highlights'] if emphasized else [], layer['align'])
 
     if 'logo' in images:
-        place_layer(canvas, images['logo'], layers['blocksec-logo'])
+        place_layer(canvas, images['logo'], layers['brand-logo'])
     draw_layer_text('event-details')
     if layout == 'speaker-quote':
         layer = layers['quote-mark']
@@ -355,7 +356,7 @@ def main():
     filename = 'speaker-quote.png' if layout == 'speaker-quote' else 'seminar-summary.png'
     final = clean_background.copy()
     final.alpha_composite(canvas)
-    save_project(project, config, clean_background, final, 'render_speaker_quote.py', filename, foreground=canvas)
+    save_project(project, config, clean_background, final, 'render_speaker_quote.py', filename, foreground=canvas, start=base)
     result = {'png': str(project/filename), 'config': str(project/'content.json'), 'draft': args.draft}
     if 'portrait' in image_raw:
         result['cutout'] = str(project/'speaker-cutout.png')

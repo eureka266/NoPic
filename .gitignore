@@ -21,3 +21,7 @@ node_modules/
 /output/prototypes/cover-workbench/preview-wide.png
 /output/prototypes/cover-workbench/preview-narrow.png
 .nopic/
+
+# Organization-owned materials are maintained outside this repository.
+/assets/
+/organization-assets/

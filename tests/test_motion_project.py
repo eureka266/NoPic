@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from PIL import Image, ImageChops, ImageDraw
+from synthetic_pack import activate_pack, disconnected_env, disconnected_pack
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -41,13 +42,13 @@ def fixture(directory):
     write_json(directory / 'content-input.json', content)
 
 
-@unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe'), 'Real encode tests need FFmpeg and ffprobe')
 class MotionProjectTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix='blocksec-motion-test-')
+        self.temp = tempfile.TemporaryDirectory(prefix='nopic-motion-test-')
         self.addCleanup(self.temp.cleanup)
         self.directory = Path(self.temp.name)
         self.project = self.directory / 'theme'
+        self.pack = activate_pack(self, self.directory)
         fixture(self.directory)
         self.run_script('render_cover.py', '--content', self.directory / 'content-input.json', '--project', self.project)
         self.run_script('cover_project.py', 'motion', '--project', self.project, '--config', self.directory / 'motion-input.json')
@@ -58,7 +59,8 @@ class MotionProjectTests(unittest.TestCase):
 
     def run_script(self, script, *args, success=True, runtime=None):
         result = subprocess.run([sys.executable, str((runtime or ROOT / 'scripts') / script),
-                                 *map(str, args)], text=True, capture_output=True)
+                                 *map(str, args)], text=True, capture_output=True,
+                                env=disconnected_env() if runtime else None)
         self.assertEqual(result.returncode == 0, success, result.stderr)
         return result
 
@@ -117,8 +119,9 @@ class MotionProjectTests(unittest.TestCase):
         moved = self.directory / 'moved'
         shutil.move(self.project, moved)
         self.project = moved
-        self.run_script('cover_project.py', 'export', '--project', moved, '--platform', 'x',
-                        '--presentation', 'both', runtime=moved / 'runtime')
+        with disconnected_pack(self.pack):
+            self.run_script('cover_project.py', 'export', '--project', moved, '--platform', 'x',
+                            '--presentation', 'both', runtime=moved / 'runtime')
         for container in [read_json(moved / 'motion/motion.json')]:
             self.assertFalse(Path(container['base']).is_absolute())
         self.assertTrue((moved / 'output/final-covers/x.gif').exists())

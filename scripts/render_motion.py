@@ -5,6 +5,7 @@ No background drawing, extraction, or generation. FFmpeg encodes actual GIF/MP4.
 import copy
 import hashlib
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -29,8 +30,9 @@ def validate_config(config):
         raise ValueError('Motion needs schema_version=1 and engine=layer-loop or background-frames')
     if config.get('type') != 'partnership-grid-flow':
         raise ValueError('No executable recipe for this motion type')
-    if config.get('style', 'preserve') not in ('preserve', 'blocksec-black', 'blocksec-blue', 'blocksec-orange', 'blocksec-blue-orange'):
-        raise ValueError('Unknown motion style; color is independent of motion type')
+    style = config.get('style', 'preserve')
+    if not isinstance(style, str) or not re.fullmatch(r'[a-z][a-z0-9]*(?:-[a-z0-9]+)*', style):
+        raise ValueError('Motion style must be a descriptive lowercase id; source assets define colors')
     size = canvas_size({'size': config.get('source_size')}, (0, 0))
     duration, fps = config.get('duration_seconds', 5), config.get('fps', 30)
     if type(duration) not in (int, float) or not 0 < duration <= 60:
@@ -107,7 +109,7 @@ def copy_motion(source_project, target_project, source_file=None):
     for container, key in asset_fields(config):
         container[key] = str((source_project / container[key]).resolve())
     # attach_motion consumes a config whose paths are relative to that input JSON.
-    with tempfile.TemporaryDirectory(prefix='blocksec-motion-import-') as temp:
+    with tempfile.TemporaryDirectory(prefix='cover-motion-import-') as temp:
         source = Path(temp) / 'motion.json'
         write_json(source, config)
         attach_motion(target_project, source, refresh_runtime=False)
@@ -200,7 +202,7 @@ def render_motion(project, formats=None):
         raise ValueError('MP4 yuv420p requires even dimensions; choose explicit platform dimensions')
     fps, duration = config.get('fps', 30), config.get('duration_seconds', 5)
     total = round(duration * fps)
-    with tempfile.TemporaryDirectory(prefix='blocksec-motion-render-') as temp:
+    with tempfile.TemporaryDirectory(prefix='cover-motion-render-') as temp:
         stage = Path(temp)
         kinds = ['background-only']
         if manifest['mode'] != 'background-only':

@@ -1,10 +1,10 @@
 """Named template snapshots and per-project layer geometry. No image rendering here."""
 import copy
 import json
-from pathlib import Path
 import re
+from organization_assets import read_catalog
+from project_assets import catalog_asset
 
-ROOT = Path(__file__).resolve().parents[1]
 SLUG = re.compile(r'[a-z][a-z0-9]*(?:-[a-z0-9]+)*\Z')
 EDITABLE_FIELDS = {
     'text': {'x', 'y', 'width', 'height', 'font_size_max', 'font_size_min', 'align'},
@@ -14,13 +14,34 @@ EDITABLE_FIELDS = {
 }
 
 
-def load_template(layout):
-    directory = ROOT / 'assets/templates'
-    index = json.loads((directory / 'index.json').read_text(encoding='utf-8'))
+def load_template(layout, config=None, start=None):
+    index = read_catalog('templates', config, start)
+    selected_id = (config or {}).get('template_id')
     for entry in index['templates']:
-        if entry['legacy_layout'] == layout:
-            return json.loads((directory / entry['file']).read_text(encoding='utf-8'))
-    raise ValueError('Unknown layout: ' + str(layout))
+        if (entry.get('legacy_layout') == layout and
+                (selected_id is None or entry.get('id') == selected_id)):
+            path = catalog_asset(entry['file'], 'templates', config, start)
+            return json.loads(path.read_text(encoding='utf-8'))
+    raise ValueError('Organization pack has no matching template: ' + str(selected_id or layout))
+
+
+def _normalize_logo_layer(template, overrides):
+    """Migrate older snapshot IDs by their declared image role."""
+    layers = template['layers']
+    candidates = [key for key, layer in layers.items() if isinstance(layer, dict)
+                  and layer.get('type') == 'image' and layer.get('asset_field') == 'logo']
+    if 'brand-logo' in layers or len(candidates) != 1:
+        return {}
+    old_id = candidates[0]
+    layers['brand-logo'] = layers.pop(old_id)
+    for group in template.get('logo_variants', {}).values():
+        if old_id in group:
+            group['brand-logo'] = group.pop(old_id)
+    if old_id in overrides:
+        if not isinstance(overrides[old_id], dict) or not isinstance(overrides.get('brand-logo', {}), dict):
+            raise ValueError('Logo layer override must be an object')
+        overrides['brand-logo'] = {**overrides.pop(old_id), **overrides.get('brand-logo', {})}
+    return {old_id: 'brand-logo'}
 
 
 def _integer(value, label, minimum=0):
@@ -109,9 +130,9 @@ def _expand_sections(config, template):
             overrides.pop(deleted, None)
 
 
-def resolve_template(config, layout, size, assignments=(), reset_layers=()):
+def resolve_template(config, layout, size, assignments=(), reset_layers=(), start=None):
     """Use the project's snapshot, then apply explicit overrides without changing defaults."""
-    template = copy.deepcopy(config['template']) if 'template' in config else load_template(layout)
+    template = copy.deepcopy(config['template']) if 'template' in config else load_template(layout, config, start)
     if not isinstance(template, dict) or template.get('schema_version') != 1:
         raise ValueError('Unsupported template snapshot schema')
     if template.get('legacy_layout') != layout:
@@ -131,6 +152,7 @@ def resolve_template(config, layout, size, assignments=(), reset_layers=()):
     overrides = copy.deepcopy(config.get('layer_overrides', {}))
     if not isinstance(overrides, dict):
         raise ValueError('layer_overrides must be an object')
+    aliases = _normalize_logo_layer(template, overrides)
     config['layer_overrides'] = overrides
     _expand_sections(config, template)
     variants = template.get('logo_variants')
@@ -139,6 +161,7 @@ def resolve_template(config, layout, size, assignments=(), reset_layers=()):
         for layer_id, fields in variants[variant].items():
             template['layers'][layer_id].update(fields)
     for layer_id in reset_layers:
+        layer_id = aliases.get(layer_id, layer_id)
         if layer_id not in template['layers']:
             raise ValueError('Unknown layer to reset: ' + layer_id)
         overrides.pop(layer_id, None)
@@ -147,6 +170,7 @@ def resolve_template(config, layout, size, assignments=(), reset_layers=()):
             raise ValueError('--layer expects LAYER_ID.PROPERTY=VALUE')
         target, raw_value = assignment.split('=', 1)
         layer_id, key = target.rsplit('.', 1)
+        layer_id = aliases.get(layer_id, layer_id)
         if layer_id not in template['layers']:
             raise ValueError('Unknown layer: ' + layer_id)
         try:

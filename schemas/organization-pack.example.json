@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "id": "your-organization",
+  "version": "1.0.0",
+  "display_name": "Your Organization Assets",
+  "defaults": {"logo": null, "partner_logo": null, "background": null},
+  "logos": [],
+  "backgrounds": [],
+  "templates": [],
+  "references": [],
+  "fonts": [],
+  "examples": [],
+  "catalogs": {},
+  "files": []
+}

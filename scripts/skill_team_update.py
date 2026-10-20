@@ -6,25 +6,24 @@ from pathlib import Path
 import sys
 import tempfile
 import zipfile
+from methodology_policy import violation
 
 ROOT = Path(__file__).resolve().parents[1]
-DIRECTORIES = ('agents', 'references', 'scripts', 'assets', 'tests', 'docs', 'skills')
+DIRECTORIES = ('agents', 'references', 'scripts', 'schemas', 'tests', 'docs', 'skills')
 ROOT_FILES = ('SKILL.md', 'README.md', 'AGENTS.md', 'CHANGELOG.md', 'requirements.txt')
 EXCLUDED = {'__pycache__', '.DS_Store', '.venv', '.venv-docs', 'node_modules'}
 NESTED_SKILL_FILES = {'SKILL.md', 'README.md', 'NOTICE.md', 'LICENSE', 'LICENSE.md',
                       'LICENSE.txt', 'requirements.txt'}
-NESTED_SKILL_RESOURCES = {'agents', 'references', 'scripts', 'assets', 'evals'}
+NESTED_SKILL_RESOURCES = {'agents', 'references', 'scripts', 'evals'}
 NESTED_SKILL_PRIVATE = {'inbox', 'workspace', 'exports', 'session-handoffs',
                        'background-studies', 'credentials.json', 'secrets.json',
                        'secrets.toml', 'auth.json', 'tokens.json'}
 # Only distributable prototype files; never recurse into uploads or local history.
 PROTOTYPE = Path('output/prototypes/cover-workbench')
 PROTOTYPE_FILES = ('README.md', 'index.html', 'style.css', 'app.js', 'server.py',
-                   'requirements.txt', 'build_preview.py', 'background_workflow.py', 'preview.html',
-                   'demo-assets.json', 'demo-assets/brand-placeholder.png',
-                   'demo-assets/partner-placeholder.png', 'demo-assets/content.json',
-                   'demo-assets/cover.png')
-QUESTION = '是否将此次维护更新上传到 Blocksec 团队空间？'
+                   'requirements.txt', 'background_workflow.py',
+                   )
+QUESTION = '是否将此次维护更新上传到组织团队空间？'
 
 
 
@@ -54,13 +53,15 @@ def source_files(root):
     files = []
     for path in candidates:
         relative = path.relative_to(root)
+        if violation(relative, root):
+            continue
         if relative.parts[0] == 'skills' and not distributable_nested_skill(relative):
             continue
         if any(part in EXCLUDED for part in relative.parts):
             continue
         if any(parent.is_symlink() for parent in (path, *path.parents) if parent != root.parent):
             continue
-        if path.is_file() and path.suffix not in ('.pyc', '.pyo'):
+        if path.is_file() and path.suffix.lower() not in {'.pyc', '.pyo', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.mp4', '.mov', '.svg', '.ttf', '.otf', '.woff', '.woff2', '.zip'}:
             files.append(path)
     return sorted(set(files))
 
@@ -83,7 +84,7 @@ def prepare_package(root, expected=None):
     revision = digest(files)
     output = root / 'exports/team-updates' / revision[:16]
     output.mkdir(parents=True, exist_ok=True)
-    archive = output / 'blocksec-social-cover.zip'
+    archive = output / 'nopic.zip'
     with tempfile.NamedTemporaryFile(dir=output, suffix='.zip', delete=False) as temp:
         temporary = Path(temp.name)
     try:
@@ -92,7 +93,7 @@ def prepare_package(root, expected=None):
                 data = (root / relative).read_bytes()
                 if hashlib.sha256(data).hexdigest() != sha:
                     raise ValueError('Skill files changed while packaging: ' + relative)
-                bundle.writestr('blocksec-social-cover/' + relative, data)
+                bundle.writestr('nopic/' + relative, data)
         if snapshot(root) != files:
             raise ValueError('Skill files changed while packaging; discard this release.')
         temporary.replace(archive)
@@ -100,7 +101,7 @@ def prepare_package(root, expected=None):
         temporary.unlink(missing_ok=True)
     manifest = output / 'manifest.json'
     report = {
-        'skill_name': 'blocksec-social-cover',
+        'skill_name': 'nopic',
         'display_name': '有图 NoPic',
         'source_revision': revision,
         'archive': str(archive),

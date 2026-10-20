@@ -1,13 +1,16 @@
 """Observable dual-deliverable, migration and platform export behavior."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from PIL import Image
+from synthetic_pack import activate_pack, disconnected_env, disconnected_pack, write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -18,15 +21,17 @@ from template_parameters import resolve_template
 
 class CoverProjectTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix='blocksec-project-test-')
+        self.temp = tempfile.TemporaryDirectory(prefix='nopic-project-test-')
         self.addCleanup(self.temp.cleanup)
         self.directory = Path(self.temp.name)
         self.project = self.directory / 'theme'
-        self.background = ROOT / 'assets/backgrounds/hex-outline.png'
+        self.pack = activate_pack(self, self.directory)
+        self.background = self.pack / 'assets/swatches/test-neutral.png'
 
     def run_script(self, name, *args, success=True, script_dir=None):
         result = subprocess.run([sys.executable, str((script_dir or ROOT/'scripts') / name),
-                                 *map(str, args)], capture_output=True, text=True)
+                                 *map(str, args)], capture_output=True, text=True,
+                                env=disconnected_env() if script_dir else None)
         self.assertEqual(result.returncode == 0, success, result.stderr)
         return result
 
@@ -76,12 +81,13 @@ class CoverProjectTests(unittest.TestCase):
         moved = self.directory / 'moved'
         shutil.move(self.project, moved)
         self.project = moved
-        self.run_script('cover_project.py', 'rebuild', '--project', moved, '--set', 'title=Revised', script_dir=moved/'runtime')
-        self.run_script('cover_project.py', 'export', '--project', moved, '--platform', 'x',
-                        '--platform', 'linkedin-horizontal', script_dir=moved/'runtime')
-        child = moved / 'variants/full-cover/x'
-        self.run_script('cover_project.py', 'rebuild', '--project', child,
-                        '--set', 'title=Approved title', script_dir=child/'runtime')
+        with disconnected_pack(self.pack):
+            self.run_script('cover_project.py', 'rebuild', '--project', moved, '--set', 'title=Revised', script_dir=moved/'runtime')
+            self.run_script('cover_project.py', 'export', '--project', moved, '--platform', 'x',
+                            '--platform', 'linkedin-horizontal', script_dir=moved/'runtime')
+            child = moved / 'variants/full-cover/x'
+            self.run_script('cover_project.py', 'rebuild', '--project', child,
+                            '--set', 'title=Approved title', script_dir=child/'runtime')
         self.assertTrue((moved / 'output/final-covers/linkedin-horizontal.webp').exists())
         self.assertEqual(self.load('content.json')['title'], 'Revised')
         for key in ('background', 'font', 'font_bold'):
@@ -170,7 +176,7 @@ class CoverProjectTests(unittest.TestCase):
         self.assertEqual(self.load('background/background-config.json')['seed'], 123)
         self.assertNotIn('background_metadata', self.load('content.json'))
         self.run_script('render_cover.py', '--project', self.project, '--background',
-                        ROOT / 'assets/backgrounds/hex-glow.png')
+                        self.pack / 'assets/swatches/test-alternate.png')
         self.assertIsNone(self.load('background/background-config.json')['seed'])
         self.assertIsNone(self.load('background/background-config.json')['prompt'])
 
@@ -181,7 +187,7 @@ class CoverProjectTests(unittest.TestCase):
         (self.project / 'background/background-config.json').write_text(json.dumps(meta))
         layouts = self.load('layout/platform-layouts.json')
         alternate = 'assets/alternate.png'
-        shutil.copyfile(ROOT / 'assets/backgrounds/hex-glow.png', self.project / alternate)
+        shutil.copyfile(self.pack / 'assets/swatches/test-alternate.png', self.project / alternate)
         layouts['variants']['x'] = {'background_file': alternate}
         (self.project / 'layout/platform-layouts.json').write_text(json.dumps(layouts))
         self.run_script('cover_project.py', 'export', '--project', self.project, '--platform', 'x')
@@ -189,6 +195,40 @@ class CoverProjectTests(unittest.TestCase):
         self.assertIsNone(variant_meta['seed'])
         self.assertIsNone(variant_meta['prompt'])
         self.assertNotIn('parent_sha256', variant_meta)
+
+
+    def test_explicit_config_pack_renders_and_saved_runtime_needs_no_pack(self):
+        source = self.directory/'explicit-pack.json'
+        write_json(source, dict(layout='hero', title='Test-only explicit pack',
+                                background=str(self.background), brand_pack=str(self.pack),
+                                font=choose_font('Test-only explicit pack Revised')))
+        with patch.dict(os.environ, {'NOPIC_BRAND_PACK': str(self.directory/'missing-pack')}):
+            self.run_script('render_cover.py', '--project', self.project, '--content', source)
+        self.assertTrue((self.project/'cover.png').is_file())
+        with disconnected_pack(self.pack):
+            self.run_script('cover_project.py', 'rebuild', '--project', self.project,
+                            '--set', 'title=Revised', script_dir=self.project/'runtime')
+        self.assertEqual(self.load('content.json')['title'], 'Revised')
+
+    def test_project_activation_renders_without_environment_pack(self):
+        write_json(self.directory/'.nopic/active-brand-pack.json', {'pack_root': str(self.pack)})
+        environment = dict(os.environ)
+        environment.pop('NOPIC_BRAND_PACK', None)
+        with patch.dict(os.environ, environment, clear=True):
+            self.full_cover()
+        self.assertTrue((self.project/'cover.png').is_file())
+        self.assertEqual(self.load('content.json')['template_id'], 'hero-test')
+
+    def test_initial_render_without_pack_cannot_silently_select_defaults(self):
+        source = self.directory/'missing-pack-input.json'
+        write_json(source, dict(layout='hero', title='Test-only missing pack',
+                                background=str(self.background)))
+        with patch.dict(os.environ, {'NOPIC_BRAND_PACK': str(self.directory/'missing-pack')}):
+            result = self.run_script('render_cover.py', '--project', self.project,
+                                     '--content', source, success=False)
+        self.assertIn('manifest', result.stderr.lower())
+        self.assertFalse((self.project/'cover.png').exists())
+        self.assertFalse((self.project/'content.json').exists())
 
 
 if __name__ == '__main__':

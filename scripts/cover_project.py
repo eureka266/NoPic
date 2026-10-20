@@ -95,7 +95,7 @@ def export_project(project, platforms, fit=None, mode='both', presentation='stat
         raise ValueError('Duplicate platform names')
     # Stage every requested platform before publishing any: overflow or a missing
     # background/layout must leave the last successful batch untouched.
-    with tempfile.TemporaryDirectory(prefix='blocksec-export-') as temp:
+    with tempfile.TemporaryDirectory(prefix='cover-export-') as temp:
         stage = Path(temp)
         rendered = []
         for name in platforms:
@@ -121,6 +121,9 @@ def export_project(project, platforms, fit=None, mode='both', presentation='stat
                                     adaptation=fit or spec.get('background_fit', 'strict'))
             child = stage / name
             child.mkdir()
+            write_json(child / 'layout/platform-layouts.json', {
+                'schema_version': 1, 'presets': copy.deepcopy(layouts['presets']), 'variants': {},
+            })
             if content is not None and mode == 'both':
                 config = scaled_config(content, size, spec.get('template'))
                 # Resolve original project paths before creating a detached child.
@@ -183,7 +186,7 @@ def rebuild_project(project, flags=(), presentation='static', formats=None):
         return
     # Stage updated static foreground and motion together; a failed motion pass
     # must not publish copy changes or overwrite the previous successful media.
-    with tempfile.TemporaryDirectory(prefix='blocksec-rebuild-') as temp:
+    with tempfile.TemporaryDirectory(prefix='cover-rebuild-') as temp:
         stage = Path(temp) / 'project'
 
         def ignore(directory, names):

@@ -4,15 +4,41 @@ import io
 import json
 from pathlib import Path
 import shutil
+from organization_assets import asset_path, catalog_path, pack_root
 
-ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ('render_cover.py', 'render_speaker_quote.py', 'template_parameters.py',
-           'project_assets.py', 'cover_project.py', 'render_motion.py')
+           'project_assets.py', 'cover_project.py', 'render_motion.py', 'organization_assets.py')
 
 
-def preset_path():
-    bundled = ROOT / 'assets/platform-presets.json'
-    return bundled if bundled.exists() else Path(__file__).parent / 'platform-presets.json'
+def catalog_asset(relative, name, config=None, start=None):
+    """Template files are index-relative; other resources are pack-relative.
+
+    Legacy background catalogs also accept catalog-relative image paths.
+    """
+    root = pack_root(config, start)
+    selected = {'brand_pack': str(root)}
+    path = Path(relative)
+    if path.is_absolute():
+        raise ValueError('Catalog resources must use relative paths')
+    if name == 'templates' or (name == 'backgrounds' and not (root / path).is_file()):
+        path = (catalog_path(name, selected).parent / path).relative_to(root)
+    return asset_path(path, selected)
+
+
+def preset_path(config=None, start=None):
+    """Project and runtime snapshots take precedence over the active pack."""
+    if start is not None:
+        project = Path(start).resolve()
+        if project.is_file():
+            project = project.parent
+        for relative in ('layout/platform-layouts.json', 'runtime/platform-presets.json'):
+            snapshot = project / relative
+            if snapshot.is_file():
+                return snapshot
+    snapshot = Path(__file__).parent / 'platform-presets.json'
+    if Path(__file__).parent.name == 'runtime' and snapshot.is_file():
+        return snapshot
+    return catalog_path('platform_presets', config, start)
 
 
 def read_json(path):
@@ -38,7 +64,7 @@ def canvas_size(config, default):
     return tuple(size)
 
 
-def copy_runtime(project):
+def copy_runtime(project, config=None):
     runtime = project / 'runtime'
     runtime.mkdir(exist_ok=True)
     for name in RUNTIME:
@@ -47,12 +73,18 @@ def copy_runtime(project):
         if source.resolve() != target.resolve():
             shutil.copyfile(source, target)
     target = runtime / 'platform-presets.json'
-    if preset_path().resolve() != target.resolve():
-        shutil.copyfile(preset_path(), target)
+    presets = read_json(preset_path(config, project))
+    write_json(target, {'schema_version': 1, 'presets': presets['presets']})
 
 
-def save_project(project, config, background, final=None, renderer=None, filename=None, foreground=None):
+def save_project(project, config, background, final=None, renderer=None, filename=None, foreground=None, start=None):
     """Called only after compositor validation; keep legacy content.json as source of truth."""
+    layout_path = project / 'layout/platform-layouts.json'
+    layouts = read_json(layout_path) if layout_path.exists() else {
+        'schema_version': 1,
+        'presets': read_json(preset_path(config, project if start is None else start))['presets'],
+        'variants': {},
+    }
     bg_raw = image_bytes(background.convert('RGB'))
     bg_sha = hashlib.sha256(bg_raw).hexdigest()
     meta_path = project / 'background/background-config.json'
@@ -81,12 +113,6 @@ def save_project(project, config, background, final=None, renderer=None, filenam
     (project / master).parent.mkdir(parents=True, exist_ok=True)
     (project / master).write_bytes(bg_raw)
     write_json(meta_path, metadata)
-    layout_path = project / 'layout/platform-layouts.json'
-    layouts = read_json(layout_path) if layout_path.exists() else {
-        'schema_version': 1,
-        'presets': read_json(preset_path())['presets'],
-        'variants': {},
-    }
     layouts['variants']['default'] = {'size': list(background.size), 'background_fit': 'strict'}
     write_json(layout_path, layouts)
     for relative, raw in images.items():
@@ -122,5 +148,5 @@ def save_project(project, config, background, final=None, renderer=None, filenam
         'outputs': {'backgrounds': 'output/background-only', 'covers': 'output/final-covers'},
     }
     write_json(project / 'project.json', manifest)
-    copy_runtime(project)
+    copy_runtime(project, config)
     return manifest
