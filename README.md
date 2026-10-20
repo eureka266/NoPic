@@ -104,6 +104,16 @@ python3 -m venv .venv
 | 参考图里有标题、人物或 Logo 怎么办 | 在“用 AI 做新底图”中先分析风格，或直接把图粘贴给 Codex 说“只提炼底图风格，先不生成”。AI 排除前景，给出可编辑提示词；不会自动把原海报当成底图。 |
 | 如何让同事复用品牌资产 | 将带 `manifest.json` 的 NoPic 品牌素材 ZIP 附到 Codex 对话，要求安装品牌包；skill 会自动安装到当前项目 `.nopic/brand-packs/`，无需指定 skill 路径。[品牌素材包说明](references/brand-pack.md) |
 
+## BlockSec 设计质量检查
+
+新增可独立使用的 [`blocksec-design-quality`](skills/blocksec-design-quality/SKILL.md)（0.2.0），用于审阅前端 UI、营销网页与内容配图。它按任务匹配视觉方向，依据带来源的设计基线检查品牌、层级与系列一致性，并区分“通过 / 需修改 / 待验证”。没有真实作品时不会声称视觉验收通过；团队审美偏好仍需示例校准。
+
+```bash
+npx skills add eureka266/NoPic --skill blocksec-design-quality --agent codex --full-depth
+```
+
+例如：“使用 `$blocksec-design-quality` 审阅这组 BlockSec 配图，只报告问题，按影响排序。”也可以在 NoPic 制作会话中直接要求“按设计质量规则做 QC”。[检查细则](skills/blocksec-design-quality/references/quality-lenses.md) · [设计基线](skills/blocksec-design-quality/references/design-baseline.md) · [场景评测](skills/blocksec-design-quality/evals/README.md)
+
 ## 继续了解与反馈
 
 [详细手册](references/user-manual.md) · [平台与项目导出](references/asset-model.md) · [动图说明](references/static-to-motion.md) · [提交问题](https://github.com/eureka266/NoPic/issues) · [项目动态](https://github.com/eureka266/NoPic/activity)

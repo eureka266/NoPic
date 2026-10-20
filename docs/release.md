@@ -53,3 +53,14 @@ npx skills list --agent codex
 - **效果图库**：首页仅展示通用占位版式与工作台截图。新增真实成品案例前先取得示例素材授权并完成实际出图，不用占位演示、参考海报或背景填充成品数量。
 
 GitHub 发布与团队工作区上传是独立动作。本地候选 ZIP 不代表已安装或已同步到团队。
+
+## 设计质量 skill 的发布验证
+
+`skills/blocksec-design-quality/` 是独立 skill，版本记录在其 `SKILL.md` 的 metadata 中。与根目录 `blocksec-social-cover` 分别检查发现与安装，避免覆盖日常已安装目录。
+
+- 运行 `python3 -m unittest discover -s tests -v`，确认现有工作台、导出和团队分发回归测试通过。
+- 用 skill-creator 的 `quick_validate.py` 校验根目录 skill 与 `skills/blocksec-design-quality/`。
+- 按 `skills/blocksec-design-quality/evals/README.md` 执行行为场景；格式校验不能代替模型评测或视觉验收。
+- 在临时目录检查 `npx skills add <源码绝对路径> --list --full-depth` 与独立项目级安装；推送后再检查远端仓库的发现和安装。
+- 嵌套 skill 分发仅收录标准入口与 `agents/references/scripts/assets/evals` 资源目录，排除隐藏配置、凭据、收件和本地工作目录；验证 ZIP 与 manifest 都不包含这些内容。
+- 提交前检查 Markdown 相对链接、上游许可与候选审美的状态；不把未实现的首页接入写成已交付能力。

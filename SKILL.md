@@ -61,6 +61,10 @@ description: 在 Codex 侧边打开 NoPic 工作台，用自然语言和上传�
 
 用户询问如何共同维护、提交贡献、审核或复用团队方案时，读取 [用户共建指南](references/contributors-guide.md)，用帖子用途、视觉效果和普通中文反馈指导，不要求用户手动修改配置。
 
+## 设计质量检查
+
+用户明确要求 BlockSec 视觉审阅、质量控制、系列一致性检查或出图 QC 时，读取 [BlockSec Design Quality](skills/blocksec-design-quality/SKILL.md)，按工作型 UI、营销网页或营销配图分流。普通制作不强制增加完整审计；“只审阅”不修改文件。该 skill 使用有来源的设计基线与适用的团队记录，不把初始建议当成团队共识；截图评审不代表交互已验证。
+
 ## 首次调用引导
 
 用户在当前对话中首次调用本 skill 的任意子指令时，先读取 [首次调用提问脚本](references/first-invocation.md)，介绍现有内容类型与静图 / 动图能力，再完成一次类型选择。Codex 中优先使用当前工具列表实际提供、且当前模式允许调用的 `request_user_input`（名称空间以宿主为准）；ChatGPT 仅使用当前会话真实提供的结构化问答工具。没有可用工具或其调用条件不满足时，用一个普通中文问句收集类型，不能调用不存在的 `AskUserQuestions`，不能为此擅自切换模式。

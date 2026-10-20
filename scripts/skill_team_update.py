@@ -8,9 +8,15 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-DIRECTORIES = ('agents', 'references', 'scripts', 'assets', 'tests', 'docs')
+DIRECTORIES = ('agents', 'references', 'scripts', 'assets', 'tests', 'docs', 'skills')
 ROOT_FILES = ('SKILL.md', 'README.md', 'AGENTS.md', 'CHANGELOG.md', 'requirements.txt')
 EXCLUDED = {'__pycache__', '.DS_Store', '.venv', '.venv-docs', 'node_modules'}
+NESTED_SKILL_FILES = {'SKILL.md', 'README.md', 'NOTICE.md', 'LICENSE', 'LICENSE.md',
+                      'LICENSE.txt', 'requirements.txt'}
+NESTED_SKILL_RESOURCES = {'agents', 'references', 'scripts', 'assets', 'evals'}
+NESTED_SKILL_PRIVATE = {'inbox', 'workspace', 'exports', 'session-handoffs',
+                       'background-studies', 'credentials.json', 'secrets.json',
+                       'secrets.toml', 'auth.json', 'tokens.json'}
 # Only distributable prototype files; never recurse into uploads or local history.
 PROTOTYPE = Path('output/prototypes/cover-workbench')
 PROTOTYPE_FILES = ('README.md', 'index.html', 'style.css', 'app.js', 'server.py',
@@ -20,6 +26,21 @@ PROTOTYPE_FILES = ('README.md', 'index.html', 'style.css', 'app.js', 'server.py'
                    'demo-assets/cover.png')
 QUESTION = '是否将此次维护更新上传到 Blocksec 团队空间？'
 
+
+
+def distributable_nested_skill(relative):
+    """Bound nested packages to skill resources, excluding local intake and secrets."""
+    parts = relative.parts
+    if len(parts) < 3:
+        return False
+    resource = parts[2:]
+    if any(part.startswith('.') or part in NESTED_SKILL_PRIVATE for part in parts[1:]):
+        return False
+    if relative.suffix.lower() in {'.pem', '.key', '.p12', '.pfx'}:
+        return False
+    if len(resource) == 1:
+        return resource[0] in NESTED_SKILL_FILES
+    return resource[0] in NESTED_SKILL_RESOURCES
 
 def source_files(root):
     candidates = [root / name for name in ROOT_FILES]
@@ -33,6 +54,8 @@ def source_files(root):
     files = []
     for path in candidates:
         relative = path.relative_to(root)
+        if relative.parts[0] == 'skills' and not distributable_nested_skill(relative):
+            continue
         if any(part in EXCLUDED for part in relative.parts):
             continue
         if any(parent.is_symlink() for parent in (path, *path.parents) if parent != root.parent):
