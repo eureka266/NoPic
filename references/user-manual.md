@@ -8,7 +8,9 @@
 
 在对话中提供图片、正式 Logo 或已有项目目录，再输入指令与中文需求即可。以下 `/...` 是 skill 的对话子指令，无需在终端运行。
 
-在 Codex 中自然语言调用 `$blocksec-social-cover` 时，skill 会先启动或复用本地 NoPic 工作台，并尝试在 Codex 右侧面板打开它。你可以在面板中上传参考图、Logo、人物照片、产品截图和字体，同时继续在当前会话里描述用途、文案和修改意见。工作台保存的当前草稿位于 `output/prototypes/cover-workbench/workspace/workbench-state.json`，最近一次会话任务位于 `workspace/session-handoffs/latest.json` / `latest.md`；如果宿主不支持侧边面板，skill 会返回本地 URL 并继续使用会话流程。
+在 Codex 中自然语言调用 `$blocksec-social-cover` 时，skill 会先启动或复用本地 NoPic 工作台，并尝试在 Codex 右侧面板打开它。你可以在面板中上传参考图、Logo、人物照片、产品截图和字体，同时继续在当前会话里描述用途、文案和修改意见。工作台保存的当前草稿位于当前项目 `.nopic/workspace/workbench-state.json`，最近一次会话任务位于 `.nopic/workspace/session-handoffs/latest.json` / `latest.md`；如果宿主不支持侧边面板，skill 会返回本地 URL 并继续使用会话流程。
+
+如果同事拿到一个 NoPic 品牌素材 ZIP，直接把它附在当前 Codex 对话并说“安装这个品牌素材包并打开工作台”。skill 会将它安装到当前项目 `.nopic/brand-packs/<id>/<version>/`，写入 `.nopic/active-brand-pack.json`，并让工作台自动显示其中的底图和默认 Logo。无需指定 skill 的安装路径；只有同时存在多个项目或品牌包时才需要选择。
 
 ## 首次使用
 
@@ -95,6 +97,14 @@
 使用 $blocksec-social-cover，根据附上的参考图和素材新绘制一张无字底图。
 调用 image_gen，保留当前模板需要的文字和 Logo 留白；生成后再合成已确认文案与正式 Logo。
 ```
+
+### 不会写提示词：从参考图开始
+
+在工作台“底图”页展开“用 AI 做新底图”，按“给参考 → 说想法 → 选择下一步”操作。默认把图直接粘贴到 Codex 当前对话；也可以在工作台选择文件、拖入、聚焦上传框后粘贴，并勾选本次参考。含文字的完整海报可用，不需要先手动去字或抠出背景。
+
+“想保留什么”可以留空，用“暖一点、干净一点、左侧放标题”等日常语言就够。选择比例和内容位置后，默认准备**风格分析任务**，回到当前对话，把任务提示与参考图一起发送。Codex 提炼配色、材质、光影和构图，并把可编辑提示词写回工作台。你可以修改后再选“提炼后直接生成无字底图”，或第一次就明确选择直接生成。
+
+工作台仅保存任务并回读结果；没有发送到对话时 AI 尚未执行。新图需由当前 Codex 对话使用原生图像生成工具完成，原件、已选底图和现有项目保留。直接在对话说“分析这张图的底图风格，先不生成”也可以；不走工作台任务时，结果直接在对话交付。[完整步骤、示例与回读协议](background-style-workflow.md)
 
 ## 按领英 / X 内容类型选择配图
 

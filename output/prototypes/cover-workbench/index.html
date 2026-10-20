@@ -71,17 +71,49 @@
     <label class="field-label" for="template">版式</label><select id="template"><option value="minimal">极简双 Logo</option><option value="centered">居中标题 + 双 Logo</option></select>
     <p class="field-help" id="template-help">只展示双方品牌，保持充足留白。</p>
     <div id="copy-fields" hidden><label class="field-label" for="title">主标题</label><textarea id="title" rows="2" maxlength="200">Partnership Announcement</textarea><label class="field-label" for="subtitle">说明文案</label><textarea id="subtitle" rows="2" maxlength="500">Approved copy goes here.</textarea><p class="field-help">演示文案，请替换为已确认的内容。</p></div>
-    <div class="divider"></div><div class="section-heading"><h3>当前品牌素材</h3><span class="subtle">2 项</span></div>
+    <div class="divider"></div><div class="section-heading"><h3>当前品牌素材</h3><span class="subtle" id="brand-pack-name">默认演示素材</span></div>
     <div class="asset-slot"><div class="asset-thumb"><img id="brand-asset" alt="本品牌占位文字，非正式 Logo"></div><div><strong>本品牌</strong><small>示例占位 · 请替换为正式 Logo</small></div><svg class="verified"><use href="#i-check"/></svg></div>
     <div class="asset-slot"><div class="asset-thumb"><img id="partner-asset" alt="合作方文字占位，非正式 Logo"></div><div><strong>合作方</strong><small>示例占位 · 请替换为正式 Logo</small></div><svg class="verified"><use href="#i-check"/></svg></div>
-    <p class="field-help">上传区先保存原件。本原型的品牌槽位沿用已有示例，暂不自动替换。</p>
+    <p class="field-help" id="brand-pack-help">当前使用演示素材；可通过 Codex 会话安装品牌包。</p>
     <div class="divider"></div><div class="section-heading"><h3>底图</h3><button class="text-button" id="choose-background">更换 <span>↗</span></button></div>
     <button class="selected-bg" id="selected-bg"><img id="selected-bg-image" alt="已选底图"><span><strong id="selected-bg-name">浅色柔光网格</strong><small>已有图库 · 不重新生成</small></span><svg><use href="#i-check"/></svg></button>
    </section>
    <section class="tab-pane" id="tab-backgrounds" hidden>
     <div class="pane-title"><h2>选择底图</h2><span class="micro-tag">固定素材</span></div><p class="field-help top-help">换底图保留当前文案与品牌素材。</p>
     <div id="background-options" class="background-options"></div>
-    <details class="generation"><summary>需要 AI 新底图？</summary><p>描述画面与留白要求，先保存生成需求。</p><label class="sr-only" for="background-brief">新底图需求</label><textarea id="background-brief" rows="3" placeholder="例如：浅橙色，中央留白，参考上传的底图参考图"></textarea><button class="secondary full" id="save-background-request">保存生成需求</button><small>原型不调用 AI；需由 Codex 后续执行。</small></details>
+    <details class="generation" id="background-generation">
+     <summary>用 AI 做新底图</summary>
+     <p class="generation-intro">贴一张喜欢的图，说说想留下什么。含文字的完整海报也可以。</p>
+     <fieldset class="reference-source"><legend><span class="step-number">1</span> 给一张参考图</legend>
+      <div class="source-options"><label><input type="radio" name="reference-source" value="chat" checked>粘贴到 Codex 对话</label><label><input type="radio" name="reference-source" value="panel">上传到工作台</label></div>
+      <p id="reference-chat-help" class="field-help">准备好任务后，回到当前 Codex 对话，把参考图和任务提示一起粘贴发送。</p>
+      <div id="reference-panel" hidden>
+       <button class="reference-dropzone" id="background-reference-dropzone">点击上传、拖入或在这里粘贴图片<span>PNG / JPG / WebP / GIF · 每张最多 20 MB</span></button>
+       <input id="background-reference-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+       <div id="background-reference-list" class="reference-list" aria-label="选择本次参考图"></div>
+       <p class="field-help">只分析勾选的图片。原件保留为风格参考。</p>
+      </div>
+     </fieldset>
+     <fieldset><legend><span class="step-number">2</span> 说说你的想法 <span class="optional">可选</span></legend>
+      <label class="sr-only" for="background-brief">希望保留的感觉</label>
+      <textarea id="background-brief" rows="3" maxlength="6000" placeholder="例如：喜欢这张图的暖橙色和柔和光感，想要更干净，左边放标题。拿不准也可以留空。"></textarea>
+      <div class="generation-layout"><label for="background-ratio">图片比例<select id="background-ratio"><option value="16:9">16:9 横版</option><option value="3:4">3:4 竖版</option><option value="1:1">1:1 方图</option><option value="4:5">4:5 竖版</option></select></label><label for="background-text-space">哪里放内容<select id="background-text-space"><option value="auto">让 AI 建议</option><option value="left">左侧放标题</option><option value="center">中央放内容</option><option value="right">右侧放内容</option><option value="top">上方放标题</option></select></label></div>
+     </fieldset>
+     <fieldset class="background-next"><legend><span class="step-number">3</span> 让 Codex 做什么</legend>
+      <label><input type="radio" name="background-intent" value="analyze" checked><span>先提炼风格提示词<small>先看懂参考图，拿到可修改的底图描述。</small></span></label>
+      <label><input type="radio" name="background-intent" value="generate"><span>提炼后直接生成无字底图<small>按参考风格新绘制，保留当前已选底图。</small></span></label>
+     </fieldset>
+     <div id="background-analysis" class="background-analysis" hidden>
+      <strong id="background-style-summary"></strong><dl id="background-style-facts"></dl>
+      <label class="field-label" for="background-style-prompt">底图提示词 · 可直接修改</label><textarea id="background-style-prompt" rows="5" maxlength="6000"></textarea>
+      <p id="background-style-exclusions" class="field-help"></p><p class="field-help">想微调？改上方想法或这段提示词，再准备一次任务。</p>
+     </div>
+     <button class="primary full" id="prepare-background-task">准备风格分析任务</button>
+     <p class="field-help">AI 会借鉴配色、材质与光影，排除文字、Logo、二维码和人物等前景。执行发生在当前 Codex 对话。</p>
+     <div id="background-task-output" class="background-task-output" hidden>
+      <p id="background-task-status" role="status"></p><label class="field-label" for="background-task-prompt">粘贴到当前 Codex 对话</label><textarea id="background-task-prompt" rows="4" readonly></textarea><button class="secondary full" id="copy-background-task">复制任务提示</button>
+     </div>
+    </details>
    </section>
    <section class="tab-pane" id="tab-delivery" hidden>
     <div class="pane-title"><h2>导出设置</h2><span class="micro-tag">本地</span></div><label class="field-label" for="format">图片格式</label><select id="format"><option value="png">PNG · 无损图片</option><option value="webp">WebP · 轻量图片</option></select>

@@ -89,6 +89,46 @@ class TeamUpdateTests(unittest.TestCase):
         self.assertFalse(manifest['uploaded'])
         self.assertEqual(len(names), manifest['file_count'])
 
+    def test_nested_quality_skill_is_complete_in_team_package(self):
+        public = ('skills/blocksec-design-quality/SKILL.md',
+                  'skills/blocksec-design-quality/NOTICE.md',
+                  'skills/blocksec-design-quality/references/design-baseline.md',
+                  'skills/blocksec-design-quality/references/quality-lenses.md',
+                  'skills/blocksec-design-quality/evals/cases.json')
+        for relative in public:
+            path = self.root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('public skill resource')
+        private_files = ('skills/blocksec-design-quality/.venv/private.txt',
+                         'skills/blocksec-design-quality/.env',
+                         'skills/blocksec-design-quality/.env.production',
+                         'skills/blocksec-design-quality/inbox/materials/customer.png',
+                         'skills/blocksec-design-quality/references/inbox/customer.png',
+                         'skills/blocksec-design-quality/evals/workspace/customer.json',
+                         'skills/blocksec-design-quality/references/.env',
+                         'skills/blocksec-design-quality/assets/credentials.json',
+                         'skills/blocksec-design-quality/assets/client.key',
+                         'skills/blocksec-design-quality/local-notes.txt',
+                         'skills/.private/references/customer.png',
+                         'skills/workspace/assets/customer.png')
+        for relative in private_files:
+            private = self.root / relative
+            private.parent.mkdir(parents=True, exist_ok=True)
+            private.write_text('private material')
+        external = self.root / 'private-outside-skill.txt'
+        external.write_text('private content')
+        (self.root / 'skills/blocksec-design-quality/external.txt').symlink_to(external)
+        report = module.prepare_package(self.root)
+        with zipfile.ZipFile(report['archive']) as archive:
+            names = set(archive.namelist())
+            self.assertTrue(all('blocksec-social-cover/' + item in names for item in public))
+            self.assertFalse(any('private' in item or 'external.txt' in item for item in names))
+            self.assertFalse(any('blocksec-social-cover/' + item in names for item in private_files))
+        manifest = json.loads(Path(report['manifest']).read_text())
+        self.assertTrue(set(private_files).isdisjoint(manifest['files']))
+        self.assertIn(public[2], manifest['files'])
+        self.assertFalse(manifest['uploaded'])
+
     def test_changed_snapshot_cannot_be_published_as_old_revision(self):
         old = module.snapshot(self.root)
         (self.root / 'SKILL.md').write_text('different content')
@@ -98,6 +138,7 @@ class TeamUpdateTests(unittest.TestCase):
     def test_package_keeps_readme_assets_and_prototype_without_runtime_files(self):
         public = ('requirements.txt', 'docs/release.md', 'docs/assets/workbench.jpg',
                   'output/prototypes/cover-workbench/server.py',
+                  'output/prototypes/cover-workbench/background_workflow.py',
                   'output/prototypes/cover-workbench/demo-assets/content.json',
                   'output/prototypes/cover-workbench/demo-assets/partner-placeholder.png',
                   'output/prototypes/cover-workbench/demo-assets/cover.png')

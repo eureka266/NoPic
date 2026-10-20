@@ -1,5 +1,7 @@
-"""Local prototype. No AI execution, hook installation, Git commit, or remote writes."""
+"""Local workbench server. No AI execution, hook installation, Git commit, or remote writes."""
+import argparse
 import base64
+from copy import deepcopy
 import hashlib
 import json
 import mimetypes
@@ -11,8 +13,10 @@ import zipfile
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import quote, unquote, urlparse
 from zoneinfo import ZoneInfo
+
+from background_workflow import prepare_handoff, read_result
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -20,13 +24,16 @@ WORK = HERE / 'workspace'
 WORK.mkdir(exist_ok=True)
 STATE = WORK / 'workbench-state.json'
 LOCK = threading.Lock()
-BG = {
+DEFAULT_BG = {
     'soft': ROOT / 'assets/backgrounds/partnership-soft-grid-light.png',
     'orange': ROOT / 'assets/backgrounds/partnership-orange-grid-light.png',
     'radial': ROOT / 'assets/backgrounds/radial-grid-symmetric-light.png',
 }
+BG = dict(DEFAULT_BG)
 BRAND_PLACEHOLDER = HERE / 'demo-assets/brand-placeholder.png'
 PARTNER_PLACEHOLDER = HERE / 'demo-assets/partner-placeholder.png'
+BRAND_PACK_ROOT = None
+BRAND_PACK_MANIFEST = None
 PREVIEW_REVISION = 'nopic-generic-partner-v2'
 KB = Path.home() / 'blocksec-product-knowledge'
 CATEGORIES = {'brand': 'materials/brand', 'layout-reference': 'materials/references/layout',
@@ -37,15 +44,138 @@ DEFAULT = {'mode': 'cover', 'background': 'soft', 'template': 'minimal',
            'title': 'Partnership Announcement', 'subtitle': 'Approved copy goes here.',
            'format': 'png', 'duration': 5, 'uploads': [], 'revision': 0,
            'finalized': False, 'preview': None, 'render_key': None,
-           'session_handoff': None}
+           'session_handoff': None, 'logo_id': None, 'partner_logo_id': None}
 
 
 def now():
     return datetime.now(ZoneInfo('Asia/Hong_Kong')).isoformat(timespec='seconds')
 
 
+def configure_paths(project_root=None):
+    global WORK, STATE
+    if project_root:
+        WORK = Path(project_root).expanduser().resolve() / '.nopic/workspace'
+    else:
+        WORK = HERE / 'workspace'
+    WORK.mkdir(parents=True, exist_ok=True)
+    STATE = WORK / 'workbench-state.json'
+
+
+def pack_file(relative):
+    if BRAND_PACK_ROOT is None:
+        raise ValueError('No brand pack is active')
+    path = (BRAND_PACK_ROOT / relative).resolve()
+    if not path.is_relative_to(BRAND_PACK_ROOT.resolve()) or not path.is_file():
+        raise ValueError(f'Brand pack asset is missing: {relative}')
+    return path
+
+
+def configure_brand_pack(pack_root=None):
+    global BG, BRAND_PLACEHOLDER, PARTNER_PLACEHOLDER
+    global BRAND_PACK_ROOT, BRAND_PACK_MANIFEST
+    BG = dict(DEFAULT_BG)
+    BRAND_PLACEHOLDER = HERE / 'demo-assets/brand-placeholder.png'
+    PARTNER_PLACEHOLDER = HERE / 'demo-assets/partner-placeholder.png'
+    BRAND_PACK_ROOT = None
+    BRAND_PACK_MANIFEST = None
+    DEFAULT['background'] = 'soft'
+    DEFAULT['logo_id'] = None
+    DEFAULT['partner_logo_id'] = None
+    if not pack_root:
+        return
+    root = Path(pack_root).expanduser().resolve()
+    manifest_file = root / 'manifest.json'
+    if not root.is_dir() or not manifest_file.is_file():
+        raise ValueError(f'Brand pack not found: {root}')
+    manifest = json.loads(manifest_file.read_text(encoding='utf-8'))
+    if manifest.get('schema_version') != 1 or not manifest.get('id'):
+        raise ValueError('Unsupported brand pack manifest')
+    backgrounds = {}
+    logos = {}
+    for entry in manifest.get('backgrounds', []):
+        if entry.get('reference_only') or entry.get('usable_as_background') is False:
+            continue
+        asset_id = entry.get('id')
+        if not asset_id:
+            continue
+        backgrounds[asset_id] = (root / entry['file']).resolve()
+        if not backgrounds[asset_id].is_file() or not backgrounds[asset_id].is_relative_to(root):
+            raise ValueError(f'Brand pack background is missing: {entry.get("file")}')
+    for entry in manifest.get('logos', []):
+        if entry.get('reference_only') or entry.get('usable_as_standalone_logo') is False:
+            continue
+        asset_id = entry.get('id')
+        if not asset_id:
+            continue
+        render_file = entry.get('render_file') or entry.get('file')
+        path = (root / render_file).resolve()
+        if not path.is_file() or not path.is_relative_to(root):
+            raise ValueError(f'Brand pack logo is missing: {render_file}')
+        logos[asset_id] = {'entry': entry, 'path': path}
+    if not backgrounds:
+        raise ValueError('Brand pack must contain at least one usable background')
+    defaults = manifest.get('defaults', {})
+    default_background = defaults.get('background') if defaults.get('background') in backgrounds else next(iter(backgrounds))
+    default_logo = defaults.get('logo') if defaults.get('logo') in logos else next(iter(logos), None)
+    partner_logo = defaults.get('partner_logo') if defaults.get('partner_logo') in logos else None
+    BG = backgrounds
+    BRAND_PACK_ROOT = root
+    BRAND_PACK_MANIFEST = {'manifest': manifest, 'backgrounds': backgrounds, 'logos': logos,
+                           'default_background': default_background, 'default_logo': default_logo,
+                           'partner_logo': partner_logo}
+    DEFAULT['background'] = default_background
+    DEFAULT['logo_id'] = default_logo
+    DEFAULT['partner_logo_id'] = partner_logo
+    BRAND_PLACEHOLDER = logos[default_logo]['path'] if default_logo else BRAND_PLACEHOLDER
+    PARTNER_PLACEHOLDER = logos[partner_logo]['path'] if partner_logo else PARTNER_PLACEHOLDER
+
+
+def brand_pack_view():
+    if not BRAND_PACK_MANIFEST:
+        return None
+    manifest = BRAND_PACK_MANIFEST['manifest']
+    backgrounds = []
+    for entry in manifest.get('backgrounds', []):
+        asset_id = entry.get('id')
+        if asset_id not in BRAND_PACK_MANIFEST['backgrounds']:
+            continue
+        relative = BRAND_PACK_MANIFEST['backgrounds'][asset_id].relative_to(BRAND_PACK_ROOT)
+        backgrounds.append({'id': asset_id, 'name': entry.get('display_name') or entry.get('label') or asset_id,
+                            'theme': entry.get('theme'), 'reference_only': bool(entry.get('reference_only')),
+                            'url': '/brand-pack/' + quote(relative.as_posix(), safe='/')})
+    logos = []
+    for entry in manifest.get('logos', []):
+        asset_id = entry.get('id')
+        if asset_id not in BRAND_PACK_MANIFEST['logos']:
+            continue
+        relative = BRAND_PACK_MANIFEST['logos'][asset_id]['path'].relative_to(BRAND_PACK_ROOT)
+        logos.append({'id': asset_id, 'name': entry.get('display_name') or asset_id,
+                      'brand': entry.get('brand'), 'url': '/brand-pack/' + quote(relative.as_posix(), safe='/')})
+    return {'id': manifest['id'], 'version': manifest.get('version'),
+            'display_name': manifest.get('display_name') or manifest['id'],
+            'root': str(BRAND_PACK_ROOT), 'default_background': BRAND_PACK_MANIFEST['default_background'],
+            'default_logo': BRAND_PACK_MANIFEST['default_logo'],
+            'partner_logo': BRAND_PACK_MANIFEST['partner_logo'],
+            'backgrounds': backgrounds, 'logos': logos}
+
+
 def read_state():
-    return {**DEFAULT, **(json.loads(STATE.read_text()) if STATE.exists() else {})}
+    state = {**deepcopy(DEFAULT), **(json.loads(STATE.read_text()) if STATE.exists() else {})}
+    if BRAND_PACK_MANIFEST:
+        if state['background'] not in BG:
+            state['background'] = DEFAULT['background']
+        logo_ids = set(BRAND_PACK_MANIFEST['logos'])
+        if state.get('logo_id') not in logo_ids:
+            state['logo_id'] = DEFAULT['logo_id']
+        if state.get('partner_logo_id') not in logo_ids:
+            state['partner_logo_id'] = DEFAULT['partner_logo_id']
+    return state
+
+
+def resolve_logo(asset_id, fallback):
+    if BRAND_PACK_MANIFEST and asset_id in BRAND_PACK_MANIFEST['logos']:
+        return BRAND_PACK_MANIFEST['logos'][asset_id]['path']
+    return fallback
 
 
 def write_json(path, value):
@@ -62,22 +192,36 @@ def inside(relative):
     return path
 
 
+def pack_inside(relative):
+    if BRAND_PACK_ROOT is None:
+        raise ValueError('No brand pack is active')
+    path = (BRAND_PACK_ROOT / relative).resolve()
+    if not path.is_relative_to(BRAND_PACK_ROOT.resolve()):
+        raise ValueError('Invalid brand pack path')
+    return path
+
+
 def state_view():
     state = read_state()
     return {**state, 'workspace': str(WORK), 'knowledge_root': str(KB),
             'knowledge_available': (KB / 'assets/video').is_dir(),
-            'timezone': 'Asia/Hong_Kong'}
+            'timezone': 'Asia/Hong_Kong', 'brand_pack': brand_pack_view()}
 
 
 def update_draft(data):
     state = read_state()
-    for key in ('mode', 'background', 'template', 'title', 'subtitle', 'format', 'duration'):
+    for key in ('mode', 'background', 'template', 'title', 'subtitle', 'format', 'duration',
+                'logo_id', 'partner_logo_id'):
         if key in data:
             state[key] = data[key]
     if state['mode'] not in ('cover', 'background', 'motion'):
         raise ValueError('Unknown workflow')
     if state['background'] not in BG or state['template'] not in ('minimal', 'centered'):
         raise ValueError('Unknown preset')
+    if BRAND_PACK_MANIFEST:
+        logo_ids = set(BRAND_PACK_MANIFEST['logos'])
+        if state.get('logo_id') not in logo_ids or (state.get('partner_logo_id') and state['partner_logo_id'] not in logo_ids):
+            raise ValueError('Unknown brand pack logo')
     if state['format'] not in ('png', 'webp'):
         raise ValueError('PNG or WebP only in this prototype')
     if any(not isinstance(state[k], str) or len(state[k]) > 2000 for k in ('title', 'subtitle')):
@@ -140,8 +284,12 @@ def render(data):
     state = update_draft(data)
     if state['mode'] == 'motion':
         return state_view()
-    key_data = {k: state[k] for k in ('mode', 'background', 'template', 'title', 'subtitle')}
+    key_data = {k: state[k] for k in ('mode', 'background', 'template', 'title', 'subtitle',
+                                      'logo_id', 'partner_logo_id')}
     key_data['preview_revision'] = PREVIEW_REVISION
+    if BRAND_PACK_MANIFEST:
+        key_data['brand_pack'] = (BRAND_PACK_MANIFEST['manifest']['id'],
+                                  BRAND_PACK_MANIFEST['manifest'].get('version'))
     key = hashlib.sha256(json.dumps(key_data, sort_keys=True).encode()).hexdigest()[:16]
     project = WORK / 'projects/partnership-demo/versions' / key
     if project.exists() and not (project / 'project.json').exists():
@@ -155,9 +303,9 @@ def render(data):
             project.mkdir(parents=True, exist_ok=True)
             content = {'layout': 'partnership-minimal' if state['template'] == 'minimal' else 'partnership-centered',
                        'theme': 'light', 'background': str(BG[state['background']]),
-                       'background_id': 'partnership-soft-grid',
-                       'logo': str(BRAND_PLACEHOLDER),
-                       'partner_logo': str(PARTNER_PLACEHOLDER),
+                       'background_id': state['background'],
+                       'logo': str(resolve_logo(state.get('logo_id'), BRAND_PLACEHOLDER)),
+                       'partner_logo': str(resolve_logo(state.get('partner_logo_id'), PARTNER_PLACEHOLDER)),
                        'title': state['title'] if state['template'] == 'centered' else '',
                        'subtitle': state['subtitle'] if state['template'] == 'centered' else '',
                        'eyebrow': '', 'footer': ''}
@@ -222,6 +370,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_data({'error': 'Local same-origin requests only'}, status=403)
         path = unquote(urlparse(self.path).path)
         try:
+            if path == '/api/background-result':
+                state = read_state()
+                return self.send_data({'task_id': (state.get('background_handoff') or {}).get('id'),
+                                       'result': read_result(WORK, state.get('background_handoff'))})
             if path == '/api/state':
                 return self.send_data(state_view())
             if path == '/api/download':
@@ -232,7 +384,9 @@ class Handler(BaseHTTPRequestHandler):
                 file = inside(state['current_project']) / ('download.' + fmt)
                 return self.send_data(file.read_bytes(), 'image/' + fmt,
                                       download='nopic-partnership.' + fmt)
-            if path.startswith('/workspace/'):
+            if path.startswith('/brand-pack/'):
+                file = pack_inside(path.removeprefix('/brand-pack/'))
+            elif path.startswith('/workspace/'):
                 file = inside(path.removeprefix('/workspace/'))
             elif path in ('/', '/index.html', '/app.js', '/style.css', '/demo-assets.json'):
                 file = HERE / ('index.html' if path == '/' else path[1:])
@@ -254,6 +408,8 @@ class Handler(BaseHTTPRequestHandler):
             if not 0 < length <= 28 * 1024 * 1024:
                 raise ValueError('Upload limit: 20 MB per file')
             data = json.loads(self.rfile.read(length))
+            if not isinstance(data, dict):
+                raise ValueError('Expected a JSON object')
             with LOCK:
                 path = urlparse(self.path).path
                 if path == '/api/render':
@@ -295,6 +451,15 @@ class Handler(BaseHTTPRequestHandler):
                     write_json(STATE, state)
                     write_json(WORK / 'inbox/materials-index.json', state['uploads'])
                     return self.send_data({'asset': record, 'state': state_view()})
+                if path == '/api/background-handoff':
+                    state = read_state()
+                    request, receipt = prepare_handoff(data, state, WORK, now())
+                    state['background_request'] = request
+                    state['background_handoff'] = receipt
+                    state['session_handoff'] = receipt
+                    state['revision'] += 1
+                    write_json(STATE, state)
+                    return self.send_data({'handoff': receipt, 'state': state_view()})
                 if path == '/api/request':
                     kind = data.get('kind')
                     if kind not in ('background', 'motion'):
@@ -384,7 +549,13 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-    httpd = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+    parser = argparse.ArgumentParser(description='Run the local NoPic workbench.')
+    parser.add_argument('port', nargs='?', type=int, default=0)
+    parser.add_argument('--project-root')
+    parser.add_argument('--brand-pack')
+    args = parser.parse_args()
+    configure_paths(args.project_root)
+    configure_brand_pack(args.brand_pack)
+    httpd = ThreadingHTTPServer(('127.0.0.1', args.port), Handler)
     print(f'http://127.0.0.1:{httpd.server_port}', flush=True)
     httpd.serve_forever()
