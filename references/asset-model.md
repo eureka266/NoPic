@@ -7,3 +7,5 @@
 `cover_project.py background`处理纯背景，`export`按项目或组织预设导出，`rebuild`重编译已有项目。跨画幅完整封面需要明确版式；不能只裁切整张成图。背景裁切必须有明确设置并保留原件。
 
 未知模型、seed或生成参数保持未知。没有真实输出或执行器时，交付配置和缺口，不称为完成图片或视频。
+
+通用协议定义：[项目manifest schema](../schemas/cover-project.schema.json) 与 [motion schema](../schemas/motion.schema.json)。它们描述文件接口，不包含组织模板或素材。
