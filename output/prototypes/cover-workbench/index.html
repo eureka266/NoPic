@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>有图 NoPic · 内容工作台</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+ <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="m3 16 5-5 5 5 3-3 5 5"/><circle cx="15.5" cy="8" r="1.5"/></symbol>
+ <symbol id="i-stack" viewBox="0 0 24 24"><path d="m12 3 10 5-10 5L2 8 12 3Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></symbol>
+ <symbol id="i-motion" viewBox="0 0 24 24"><rect x="4" y="3" width="17" height="18" rx="3"/><path d="m10 8 6 4-6 4ZM1 7h3M1 12h3M1 17h3"/></symbol>
+ <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+ <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+ <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Zm0 1h18"/></symbol>
+ <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+ <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="8" cy="7" r="3"/><circle cx="16" cy="17" r="3"/></symbol>
+ <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/></symbol>
+ <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
+ <symbol id="i-link" viewBox="0 0 24 24"><path d="m10 13 4-4m-6 6-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 2 1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0"/></symbol>
+</svg>
+<div class="app">
+ <header class="app-header">
+   <div class="brand"><span class="brand-name">NoPic</span><span class="header-divider"></span><span>内容工作台</span><span class="prototype-tag">原型</span></div>
+   <button class="icon-button" id="settings" aria-label="查看保存位置" title="查看保存位置"><svg><use href="#i-settings"/></svg></button>
+ </header>
+ <div class="project-bar">
+   <div><div class="eyebrow">SOCIAL COVER / 001</div><h1>本公司 × 合作方</h1><p>合作公告 <span>·</span> 使用外部组织素材包制作可编辑配图</p></div>
+   <div class="save-state" id="save-status"><i></i><span>本地项目</span></div>
+ </div>
+ <nav class="workflow-nav" aria-label="制作流程">
+   <button data-mode="background"><svg><use href="#i-image"/></svg><span>制作底图</span></button>
+   <button data-mode="cover" class="active"><svg><use href="#i-stack"/></svg><span>完整配图</span></button>
+   <button data-mode="motion"><svg><use href="#i-motion"/></svg><span>静图转动图</span></button>
+ </nav>
+ <section class="paths" id="paths" hidden>
+   <div class="section-heading"><h2>保存位置</h2><button class="text-button" id="close-paths">收起</button></div>
+   <label>本次工作路径<code id="workspace-path"></code></label>
+   <label>可选知识库<code id="knowledge-path"></code></label>
+   <p>本原型固定使用独立工作目录。上传与导出会真实落盘；知识库目录仅检测，不写入。</p>
+ </section>
+ <main class="workbench">
+  <div class="preview-column">
+   <section class="preview-panel">
+    <div class="panel-heading"><div><span class="section-number">01</span><h2>画布预览</h2></div><div class="preview-controls"><span class="canvas-size">1600 × 900</span><button class="icon-button" id="expand" aria-label="放大预览"><svg><use href="#i-expand"/></svg></button></div></div>
+    <div class="preview-stage" id="stage"><div class="canvas-wrap"><img id="preview" alt="当前配图预览" hidden><p id="empty-preview">尚未加载组织素材包<br><small>安装包后选择底图与模板；也可以先上传参考图。</small></p><div class="render-overlay" id="render-overlay" hidden><span class="spinner"></span>正在更新预览</div></div></div>
+    <div class="preview-caption"><span id="preview-kind"><i class="tiny-dot"></i>静态母版</span><span id="preview-note">独立底图 · Logo 分层保留</span></div>
+    <div class="motion-strip" id="motion-strip" hidden><svg><use href="#i-motion"/></svg><span>静态母版</span><div class="timeline"><span></span></div><span>00:00 / 00:05</span></div>
+   </section>
+   <section class="upload-section">
+    <div class="panel-heading"><div><span class="section-number">02</span><h2>上传与归类</h2></div><span class="subtle">原文件保留</span></div>
+    <div class="upload-category"><label for="upload-category">这次上传的是</label><select id="upload-category"><option value="brand">品牌素材 / Logo</option><option value="layout-reference">总体参考图</option><option value="background-reference">底图参考图</option><option value="background">可直接使用的底图</option><option value="static">之前制作好的静态图</option><option value="other">人物、截图或其他素材</option></select></div>
+    <button class="dropzone" id="dropzone"><span class="upload-icon"><svg><use href="#i-upload"/></svg></span><span><strong>拖入素材，或点击上传</strong><small>原名保存 · 按用途归档 · 单文件最大 20 MB</small></span><span class="upload-plus">+</span></button>
+    <input type="file" id="file-input" multiple hidden>
+    <div class="destination"><svg><use href="#i-folder"/></svg><span id="upload-destination">inbox/materials/日期-partnership-demo/brand/</span></div>
+    <div id="uploaded-files" class="file-list" aria-live="polite"></div>
+    <div class="session-handoff">
+     <label class="field-label" for="session-instruction">给当前会话的制作说明 <span class="subtle">可选</span></label>
+     <textarea id="session-instruction" rows="3" placeholder="例如：参考上传的总体参考图，保留本公司 Logo，做一张 LinkedIn 合作公告封面。"></textarea>
+     <button class="primary full" id="handoff-session"><svg><use href="#i-link"/></svg><span>准备当前会话任务</span></button>
+     <p class="field-help" id="session-handoff-status">会生成本地任务清单并复制提示词；不会直接向 Codex 注入消息。</p>
+    </div>
+   </section>
+   <section class="flow-note"><svg><use href="#i-link"/></svg><p>准备任务后回到当前 Codex 会话粘贴提示词，agent 会读取同一份本地素材和草稿。<span>浏览器无法直接向当前会话注入消息。</span></p></section>
+  </div>
+  <aside class="inspector">
+   <div class="inspector-tabs" role="tablist" aria-label="配图设置"><button role="tab" aria-selected="true" data-tab="content">内容</button><button role="tab" aria-selected="false" data-tab="backgrounds">底图</button><button role="tab" aria-selected="false" data-tab="delivery">交付</button></div>
+   <section class="tab-pane" id="tab-content">
+    <div class="pane-title"><h2>合作公告</h2><span class="micro-tag">模板</span></div>
+    <label class="field-label" for="template">版式</label><select id="template"><option value="">请加载组织素材包</option></select>
+    <p class="field-help" id="template-help">版式来自当前组织素材包。</p>
+    <div id="copy-fields" hidden><label class="field-label" for="title">主标题</label><textarea id="title" rows="2" maxlength="200"></textarea><label class="field-label" for="subtitle">说明文案</label><textarea id="subtitle" rows="2" maxlength="500"></textarea><p class="field-help">演示文案，请替换为已确认的内容。</p></div>
+    <div class="divider"></div><div class="section-heading"><h3>当前品牌素材</h3><span class="subtle" id="brand-pack-name">未加载组织素材包</span></div>
+    <div class="asset-slot"><div class="asset-thumb"><img id="brand-asset" alt="当前组织正式标识"></div><div><strong>本品牌</strong><small>从组织包选择适用标识</small></div><svg class="verified"><use href="#i-check"/></svg></div>
+    <div class="asset-slot"><div class="asset-thumb"><img id="partner-asset" alt="当前合作方正式标识"></div><div><strong>合作方</strong><small>从组织包选择适用标识</small></div><svg class="verified"><use href="#i-check"/></svg></div>
+    <p class="field-help" id="brand-pack-help">通过当前会话安装组织素材包，工作台只使用包内资源。</p>
+    <div class="divider"></div><div class="section-heading"><h3>底图</h3><button class="text-button" id="choose-background">更换 <span>↗</span></button></div>
+    <button class="selected-bg" id="selected-bg"><img id="selected-bg-image" alt="已选底图"><span><strong id="selected-bg-name">尚未选择底图</strong><small>已有图库 · 不重新生成</small></span><svg><use href="#i-check"/></svg></button>
+   </section>
+   <section class="tab-pane" id="tab-backgrounds" hidden>
+    <div class="pane-title"><h2>选择底图</h2><span class="micro-tag">固定素材</span></div><p class="field-help top-help">换底图保留当前文案与品牌素材。</p>
+    <div id="background-options" class="background-options"></div>
+    <details class="generation" id="background-generation">
+     <summary>用 AI 做新底图</summary>
+     <p class="generation-intro">贴一张喜欢的图，说说想留下什么。含文字的完整海报也可以。</p>
+     <fieldset class="reference-source"><legend><span class="step-number">1</span> 给一张参考图</legend>
+      <div class="source-options"><label><input type="radio" name="reference-source" value="chat" checked>粘贴到 Codex 对话</label><label><input type="radio" name="reference-source" value="panel">上传到工作台</label></div>
+      <p id="reference-chat-help" class="field-help">准备好任务后，回到当前 Codex 对话，把参考图和任务提示一起粘贴发送。</p>
+      <div id="reference-panel" hidden>
+       <button class="reference-dropzone" id="background-reference-dropzone">点击上传、拖入或在这里粘贴图片<span>PNG / JPG / WebP / GIF · 每张最多 20 MB</span></button>
+       <input id="background-reference-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+       <div id="background-reference-list" class="reference-list" aria-label="选择本次参考图"></div>
+       <p class="field-help">只分析勾选的图片。原件保留为风格参考。</p>
+      </div>
+     </fieldset>
+     <fieldset><legend><span class="step-number">2</span> 说说你的想法 <span class="optional">可选</span></legend>
+      <label class="sr-only" for="background-brief">希望保留的感觉</label>
+      <textarea id="background-brief" rows="3" maxlength="6000" placeholder="例如：喜欢这张图的暖橙色和柔和光感，想要更干净，左边放标题。拿不准也可以留空。"></textarea>
+      <div class="generation-layout"><label for="background-ratio">图片比例<select id="background-ratio"><option value="16:9">16:9 横版</option><option value="3:4">3:4 竖版</option><option value="1:1">1:1 方图</option><option value="4:5">4:5 竖版</option></select></label><label for="background-text-space">哪里放内容<select id="background-text-space"><option value="auto">让 AI 建议</option><option value="left">左侧放标题</option><option value="center">中央放内容</option><option value="right">右侧放内容</option><option value="top">上方放标题</option></select></label></div>
+     </fieldset>
+     <fieldset class="background-next"><legend><span class="step-number">3</span> 让 Codex 做什么</legend>
+      <label><input type="radio" name="background-intent" value="analyze" checked><span>先提炼风格提示词<small>先看懂参考图，拿到可修改的底图描述。</small></span></label>
+      <label><input type="radio" name="background-intent" value="generate"><span>提炼后直接生成无字底图<small>按参考风格新绘制，保留当前已选底图。</small></span></label>
+     </fieldset>
+     <div id="background-analysis" class="background-analysis" hidden>
+      <strong id="background-style-summary"></strong><dl id="background-style-facts"></dl>
+      <label class="field-label" for="background-style-prompt">底图提示词 · 可直接修改</label><textarea id="background-style-prompt" rows="5" maxlength="6000"></textarea>
+      <p id="background-style-exclusions" class="field-help"></p><p class="field-help">想微调？改上方想法或这段提示词，再准备一次任务。</p>
+     </div>
+     <button class="primary full" id="prepare-background-task">准备风格分析任务</button>
+     <p class="field-help">AI 会借鉴配色、材质与光影，排除文字、Logo、二维码和人物等前景。执行发生在当前 Codex 对话。</p>
+     <div id="background-task-output" class="background-task-output" hidden>
+      <p id="background-task-status" role="status"></p><label class="field-label" for="background-task-prompt">粘贴到当前 Codex 对话</label><textarea id="background-task-prompt" rows="4" readonly></textarea><button class="secondary full" id="copy-background-task">复制任务提示</button>
+     </div>
+    </details>
+   </section>
+   <section class="tab-pane" id="tab-delivery" hidden>
+    <div class="pane-title"><h2>导出设置</h2><span class="micro-tag">本地</span></div><label class="field-label" for="format">图片格式</label><select id="format"><option value="png">PNG · 无损图片</option><option value="webp">WebP · 轻量图片</option></select>
+    <div class="delivery-list"><div><svg><use href="#i-check"/></svg>完整配图与独立底图</div><div><svg><use href="#i-check"/></svg>可编辑项目与素材副本</div><div><svg><use href="#i-check"/></svg>文案、模板与字体</div></div>
+    <p class="field-help">下载图片的同时，完整项目保存在本地工作路径。切换“制作底图”时只制作无字底图。</p>
+    <div class="divider"></div><h3>定稿后入库</h3><p class="field-help">先生成本地候选包，再决定是否提交知识库。原型不执行 Git 操作。</p><button class="secondary full" id="finalize-inspector">标记定稿，查看清单</button>
+   </section>
+   <section class="motion-settings" id="motion-settings" hidden>
+    <div class="pane-title"><h2>背景循环</h2><span class="micro-tag">素材检查</span></div><div class="motion-check"><span class="status-circle">!</span><strong>需要可运动的独立图层</strong><p>当前母版只有完整背景，不能直接套用网格运动。请补充透明纹理层，或已有背景序列帧。</p></div>
+    <label class="field-label" for="duration">目标时长 <span id="duration-label">5 秒</span></label><input type="range" id="duration" min="2" max="15" value="5"><label class="field-label" for="motion-brief">希望怎样动起来</label><textarea id="motion-brief" rows="3" placeholder="例如：文字和 Logo 固定，背景网格缓慢循环"></textarea><button class="secondary full" id="save-motion-request">保存动效需求</button><p class="field-help">这里只保存需求，不生成或导出视频。</p>
+   </section>
+  </aside>
+ </main>
+ <section class="finalization" id="finalization" hidden aria-live="polite"><div class="final-heading"><span class="final-check"><svg><use href="#i-check"/></svg></span><div><h2>此版本已定稿，项目已保存在本地</h2><p>可选提交到知识库，也可以只保留本地。</p></div></div><div class="final-target"><svg><use href="#i-folder"/></svg><code id="submission-target"></code></div><div class="final-actions"><a class="secondary" id="download-package">下载候选工程包</a><button class="text-button" id="dismiss">仅保留本地</button></div><details><summary id="file-count">查看入库文件清单</summary><ul id="submission-files"></ul></details><p class="field-help">候选包未提交、未推送；上传的参考图不自动包含其中。</p></section>
+ <footer class="action-bar"><div class="action-status"><i></i><span id="action-status">本地制作 · 素材不外传</span></div><div class="actions"><button class="secondary" id="finalize">标记定稿</button><button class="primary" id="export"><svg><use href="#i-download"/></svg><span>导出图片</span></button></div></footer>
+ <div class="prototype-note">交互原型 · 静态合成、分类上传与本地保存可用 · AI、自动 hook 和 Git 提交尚未接入</div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<dialog id="lightbox"><button class="icon-button" id="close-lightbox" aria-label="关闭大图">×</button><img id="lightbox-image" alt="放大预览"></dialog>
+
+<script src="app.js"></script>
+</body></html>

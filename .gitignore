@@ -1,0 +1,27 @@
+.codex/skill-update-state/
+/.codex/hooks.json
+exports/team-updates/
+/exports/brand-packs/
+
+# Local environments, credentials and generated working history
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.venv-docs/
+node_modules/
+.env
+.env.*
+!.env.example
+/inbox/**
+!/inbox/materials/
+!/inbox/materials/README.md
+/output/prototypes/cover-workbench/workspace/
+# Superseded local screenshots; the current generic preview is preview-nopic.jpg
+/output/prototypes/cover-workbench/preview-wide.png
+/output/prototypes/cover-workbench/preview-narrow.png
+.nopic/
+
+# Organization-owned materials are maintained outside this repository.
+/assets/
+/organization-assets/
